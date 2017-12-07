@@ -1,6 +1,5 @@
 public class StringFormat {
 
-
 	public static String dec(double number, int digits, int commaDigits, boolean signed, char symbol) {
 		String str = (signed ? (number < 0 ? "-" : " ") : "") + (int)(number = Math.abs(number));
 		if (commaDigits > 0) {
