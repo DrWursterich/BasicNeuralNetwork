@@ -1,3 +1,5 @@
+package BNN;
+
 public class Node {
 	private NeuralNet neuralNet;
 	private Connection[] inputs;
@@ -24,6 +26,16 @@ public class Node {
 
 	public Node(NeuralNet neuralNet) throws IllegalArgumentException {
 		this(neuralNet, new Node[0]);
+	}
+
+	Node(boolean p, NeuralNet neuralNet) {
+		this.neuralNet = neuralNet;
+		this.outputs = new Connection[0];
+		this.inputs = new Connection[0];
+	}
+
+	void setInputs(Connection[] inputs) {
+		this.inputs = inputs;
 	}
 
 	public NeuralNet getNeuralNet() {

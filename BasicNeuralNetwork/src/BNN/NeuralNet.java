@@ -1,3 +1,12 @@
+package BNN;
+
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+
+
 public class NeuralNet {
 	private Node[][] nodes;
 	private int[] dimensions;
@@ -22,6 +31,14 @@ public class NeuralNet {
 				nodes[i][j] = new Node(this, (i!=0 ? nodes[i-1] : new Node[0]));
 			}
 		}
+		this.nodes = nodes;
+	}
+
+	NeuralNet(boolean p, int[] dimensions) {
+		this.dimensions = dimensions;
+	}
+
+	void setNodes(Node[][] nodes) {
 		this.nodes = nodes;
 	}
 
@@ -135,10 +152,25 @@ public class NeuralNet {
 		if (td == null) {
 			throw new IllegalArgumentException("Training data can not be null");
 		}
+		if (td.getInputs().length != this.nodes[0].length || td.getOutputs().length != this.nodes[this.nodes.length-1].length) {
+			throw new IllegalArgumentException("Training data has to have the same dimensions as the network.");
+		}
 		this.setInputs(td.getInputs());
 		this.process();
 		this.backpropagate(learningRate, momentum, td.getOutputs());
 		td.increaseTimesTrained();
+	}
+
+	public void trainSet(double learningRate, double momentum, TrainingData[] td, int iterations) throws IllegalArgumentException {
+		if (td == null) {
+			throw new IllegalArgumentException("Training data can not be null.");
+		}
+		if (iterations < 1) {
+			throw new IllegalArgumentException("Iterations have to be larger than 1.");
+		}
+		while (iterations-- > 0) {
+			train(learningRate, momentum, td[(int)(Math.random()*(td.length))]);
+		}
 	}
 
 	public void printNet() {
@@ -169,6 +201,126 @@ public class NeuralNet {
 				}
 			}
 			System.out.println();
+		}
+	}
+
+	public void safeToFile(String file, boolean overwrite) throws IOException {
+		RandomAccessFile stream = new RandomAccessFile(file, "rw");
+		FileChannel channel = stream.getChannel();
+		FileLock lock = null;
+		boolean abort;
+		try {
+			lock = channel.tryLock();
+		} catch (OverlappingFileLockException e) {
+			stream.close();
+			channel.close();
+			throw new IOException("Network has not been saved, file is locked");
+		}
+		if (overwrite) {
+			stream.setLength(0);
+		}
+		stream.seek(stream.length());
+		stream.writeDouble(this.dimensions.length);
+		for (int i=0;i<this.dimensions.length;i++) {
+			stream.writeDouble(this.dimensions[i]);
+		}
+		for (int i=0;i<this.nodes.length;i++) {
+			for (int j=this.nodes[i].length-1;j>=0;j--) {
+				Connection[] inputs = this.nodes[i][j].getInputs();
+				stream.writeDouble(inputs.length);
+				for (int k=0;k<inputs.length;k++) {
+					abort = false;
+					for (int l=0;l<this.nodes.length && !abort;l++) {
+						for (int m=0;m<this.nodes[l].length && !abort;m++) {
+							if (this.nodes[l][m] == inputs[k].getChild()) {
+								stream.writeDouble(l);
+								stream.writeDouble(m);
+								abort = true;
+							}
+						}
+					}
+					stream.writeDouble(inputs[k].getWeight());
+					stream.writeDouble(inputs[k].getDeltaWeight());
+					stream.writeDouble(inputs[k].getPrevDeltaWeight());
+				}
+			}
+		}
+		lock.release();
+		stream.close();
+		channel.close();
+	}
+
+	public static NeuralNet loadFromFile(String file) throws IOException {
+		NeuralNet nn;
+		RandomAccessFile stream = new RandomAccessFile(file, "r");
+		FileChannel channel = stream.getChannel();
+		int[] dimensions = new int[(int)stream.readDouble()];
+		for (int i=0;i<dimensions.length;i++) {
+			dimensions[i] = (int)stream.readDouble();
+		}
+		nn = new NeuralNet(false, dimensions);
+		Node[][] nodes = new Node[dimensions.length][];
+		for (int i=0;i<dimensions.length;i++) {
+			nodes[i] = new Node[dimensions[i]];
+			for (int j=dimensions[i]-1;j>=0;j--) {
+				nodes[i][j] = new Node(false, nn);
+				Connection[] inputs = new Connection[(int)stream.readDouble()];
+				for (int k=0;k<inputs.length;k++) {
+					int layer = (int)stream.readDouble();
+					int node = (int)stream.readDouble();
+					double weight = stream.readDouble();
+					double deltaWeight = stream.readDouble();
+					double prevDeltaWeight = stream.readDouble();
+					inputs[k] = new Connection(nodes[layer][node], nodes[i][j], weight, deltaWeight, prevDeltaWeight);
+				}
+				nodes[i][j].setInputs(inputs);
+			}
+		}
+		nn.setNodes(nodes);
+		stream.close();
+		channel.close();
+		return nn;
+	}
+
+	public void dumpInfo() {
+		for (int i=0;i<this.nodes.length;i++) {
+			for (int j=0;j<this.nodes[i].length;j++) {
+				Connection[] inputs = this.nodes[i][j].getInputs();
+				Connection[] outputs = this.nodes[i][j].getOutputs();
+				System.out.println("node["+i+"]["+j+"]: ");
+				for (int k=0;k<inputs.length;k++) {
+					Node c = inputs[k].getChild();
+					Node p = inputs[k].getParent();
+					int cx = 0, cy = 0, px = 0, py = 0;
+					for (int l=0;l<this.nodes.length;l++) {
+						for (int m=0;m<this.nodes[l].length;m++) {
+							if (this.nodes[l][m] == c) {
+								cx = l; cy = m;
+							}
+							if (this.nodes[l][m] == p) {
+								px = l; py = m;
+							}
+						}
+					}
+					System.out.println("I: c["+cx+"]["+cy+"], p["+px+"]["+py+"], " + inputs[k].getWeight() + ", " + inputs[k].getDeltaWeight() + ", " + inputs[k].getPrevDeltaWeight());
+				}
+				for (int k=0;k<outputs.length;k++) {
+					Node c = outputs[k].getChild();
+					Node p = outputs[k].getParent();
+					int cx = 0, cy = 0, px = 0, py = 0;
+					for (int l=0;l<this.nodes.length;l++) {
+						for (int m=0;m<this.nodes[l].length;m++) {
+							if (this.nodes[l][m] == c) {
+								cx = l; cy = m;
+							}
+							if (this.nodes[l][m] == p) {
+								px = l; py = m;
+							}
+						}
+					}
+					System.out.println("O: c["+cx+"]["+cy+"], p["+px+"]["+py+"], " + outputs[k].getWeight() + ", " + outputs[k].getDeltaWeight() + ", " + outputs[k].getPrevDeltaWeight());
+				}
+			}
 		}
 	}
 }

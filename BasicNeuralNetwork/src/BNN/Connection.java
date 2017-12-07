@@ -1,3 +1,5 @@
+package BNN;
+
 public class Connection {
 	private Node child;
 	private Node parent;
@@ -12,9 +14,6 @@ public class Connection {
 		if (parent == null) {
 			throw new IllegalArgumentException("Parent can not be null.");
 		}
-		if (weight < -1 || weight > 1) {
-			throw new IllegalArgumentException("Weight has to be between -1 and 1.");
-		}
 		this.child = child;
 		this.parent = parent;
 		this.weight = weight;
@@ -23,6 +22,12 @@ public class Connection {
 
 	public Connection(Node child, Node parent) throws IllegalArgumentException {
 		this(child, parent, Math.random() * 2 -1);
+	}
+
+	Connection(Node child, Node parent, double weight, double deltaWeight, double prevDeltaWeight) {
+		this(child, parent, weight);
+		this.deltaWeight = deltaWeight;
+		this.prevDeltaWeight = prevDeltaWeight;
 	}
 
 	public Node getChild() {
@@ -51,10 +56,7 @@ public class Connection {
 		return weight;
 	}
 
-	public void setWeight(double weight) throws IllegalArgumentException {
-		if (weight < -1 || weight > 1) {
-			throw new IllegalArgumentException("Weight has to be between -1 and 1.");
-		}
+	public void setWeight(double weight) {
 		this.weight = weight;
 	}
 
@@ -73,6 +75,6 @@ public class Connection {
 	}
 
 	public void calculateWeight(double momentum) {
-		this.weight = Math.min(Math.max(this.weight + this.deltaWeight + momentum * this.prevDeltaWeight, 0), 1);
+		this.weight = this.weight + this.deltaWeight + momentum * this.prevDeltaWeight;
 	}
 }

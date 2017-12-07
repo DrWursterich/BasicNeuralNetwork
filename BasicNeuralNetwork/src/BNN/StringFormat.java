@@ -1,3 +1,5 @@
+package BNN;
+
 public class StringFormat {
 
 	public static String dec(double number, int digits, int commaDigits, boolean signed, char symbol) throws IllegalArgumentException {
