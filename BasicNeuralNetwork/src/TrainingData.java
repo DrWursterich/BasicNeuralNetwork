@@ -12,7 +12,25 @@ public class TrainingData {
 	private double[] outputs;
 	private int timesTrained = 0;
 
-	public TrainingData(double[] inputs, double[] outputs) {
+	public TrainingData(double[] inputs, double[] outputs) throws IllegalArgumentException {
+		if (inputs == null) {
+			throw new IllegalArgumentException("Inputs can not be null.");
+		}
+		if (outputs == null) {
+			throw new IllegalArgumentException("Outputs can not be null.");
+		}
+		for (int i=Math.max(inputs.length, outputs.length)-1;i>=0;i--) {
+			if (i<inputs.length) {
+				if (inputs[i] < -1 || inputs[i] > 1) {
+					throw new IllegalArgumentException("Inputs have to be between -1 and 1.");
+				}
+			}
+			if (i<outputs.length) {
+				if (outputs[i] < -1 || outputs[i] > 1) {
+					throw new IllegalArgumentException("Outputs have to be between -1 and 1.");
+				}
+			}
+		}
 		this.inputs = inputs;
 		this.outputs = outputs;
 	}
@@ -25,7 +43,10 @@ public class TrainingData {
 		return this.timesTrained;
 	}
 
-	public double getInput(int input) {
+	public double getInput(int input) throws IllegalArgumentException {
+		if (input >= this.inputs.length) {
+			throw new IllegalArgumentException("Input does not exist.");
+		}
 		return this.inputs[input];
 	}
 
@@ -63,12 +84,10 @@ public class TrainingData {
 			stream.writeDouble(-1.0);
 			for (int i=0;i<this.inputs.length;i++) {
 				stream.writeDouble(this.inputs[i]);
-				//stream.writeBytes((i==this.inputs.length-1 ? System.getProperty("line.separator") : " "));
 			}
 			stream.writeDouble(-2.0);
 			for (int i=0;i<this.outputs.length;i++) {
 				stream.writeDouble(this.outputs[i]);
-				//stream.writeBytes((i==this.outputs.length-1 ? System.getProperty("line.separator") : " "));
 			}
 			stream.writeDouble(-3.0);
 			lock.release();

@@ -2,6 +2,7 @@ public class TestMain {
 	public static void main(String[] args) {
 		double learningRate = 0.1;
 		double momentum = 0.1;
+		String file = "C:\\Users\\Schäper\\Desktop\\Ablage\\BNN\\TrainingData\\XORAND";
 		NeuralNet nn = new NeuralNet(new int[] {2, 4, 2});	//AND | XOR
 //		TrainingData[] td = new TrainingData[] {
 //					new TrainingData(
@@ -22,7 +23,6 @@ public class TestMain {
 //					)
 //				};
 //
-		String file = "C:\\Users\\Schäper\\Desktop\\Ablage\\BNN\\TrainingData\\td.txt";
 //		for (int i=0;i<td.length;i++) {
 //			td[i].saveToFile(file, i==0);
 //		}
@@ -39,10 +39,3 @@ public class TestMain {
 		}
 	}
 }
-
-
-/* TODO!
- *
- * -Bias
- * -backpropagating multiple hiddenlayers
- */

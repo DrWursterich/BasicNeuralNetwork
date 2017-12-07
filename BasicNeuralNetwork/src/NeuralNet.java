@@ -2,10 +2,19 @@ public class NeuralNet {
 	private Node[][] nodes;
 	private int[] dimensions;
 
-	public NeuralNet(int[] dimensions) {
+	public NeuralNet(int[] dimensions) throws IllegalArgumentException {
+		if (dimensions == null) {
+			throw new IllegalArgumentException("Dimensions can not be null.");
+		}
+		if (dimensions.length < 2) {
+			throw new IllegalArgumentException("There have to be atleast 2 dimensions.");
+		}
 		this.dimensions = dimensions;
 		Node[][] nodes = new Node[this.dimensions.length][];
 		for (int i=nodes.length-1;i>=0;i--) {
+			if (this.dimensions[i] <= 0) {
+				throw new IllegalArgumentException("Dimensions have to be larger than 0.");
+			}
 			nodes[i] = new Node[this.dimensions[i]];
 		}
 		for (int i=0;i<nodes.length;i++) {
@@ -20,19 +29,40 @@ public class NeuralNet {
 		return this.dimensions;
 	}
 
-	public Node getNode(int layer, int node) {
+	public Node getNode(int layer, int node) throws IllegalArgumentException {
+		if (layer < 0 || layer >= this.nodes.length) {
+			throw new IllegalArgumentException("Layer does not exist.");
+		}
+		if (node < 0 || node >= this.nodes[layer].length) {
+			throw new IllegalArgumentException("Node does not exist.");
+		}
 		return this.nodes[layer][node];
 	}
 
-	public void setInput(int node, double input) {
-		this.nodes[0][node].setContent(input);;
+	public void setInput(int node, double input) throws IllegalArgumentException {
+		if (node < 0 || node >= this.nodes[0].length) {
+			throw new IllegalArgumentException("Node does not exist.");
+		}
+		if (input < 0 || input > 1) {
+			throw new IllegalArgumentException("Input has to be between 0 and 1");
+		}
+		this.nodes[0][node].setContent(input);
 	}
 
-	public double getOutput(int node) {
+	public double getOutput(int node) throws IllegalArgumentException {
+		if (node < 0 || node >= this.nodes[this.nodes.length-1].length) {
+			throw new IllegalArgumentException("Node does not exist.");
+		}
 		return this.nodes[this.nodes.length-1][node].getContent();
 	}
 
-	public void setInputs(double[] inputs) {
+	public void setInputs(double[] inputs) throws IllegalArgumentException {
+		if (inputs == null) {
+			throw new IllegalArgumentException("Inputs can not be null.");
+		}
+		if (inputs.length != this.nodes[0].length ) {
+			throw new IllegalArgumentException("The number of inputs has to match the number of input-nodes");
+		}
 		for (int i=this.nodes[0].length-1;i>=0;i--) {
 			this.setInput(i, inputs[i]);
 		}
@@ -54,23 +84,32 @@ public class NeuralNet {
 		}
 	}
 
-	public void processInputs(double[] inputs) {
+	public void processInputs(double[] inputs) throws IllegalArgumentException {
 		setInputs(inputs);
 		process();
 	}
 
-	public double[] getOutputsForInputs(double[] inputs) {
+	public double[] getOutputsForInputs(double[] inputs) throws IllegalArgumentException {
 		setInputs(inputs);
 		process();
 		return getOutputs();
 	}
 
 	public void backpropagate(double learningRate, double momentum, double[] idealOutputs) {
+		if (idealOutputs == null) {
+			throw new IllegalArgumentException("Ideal outputs can not be null.");
+		}
+		if (idealOutputs.length != this.nodes[this.nodes.length-1].length ) {
+			throw new IllegalArgumentException("The number of expected outputs has to match the number of output-nodes.");
+		}
 		int outputLayerLength = this.dimensions[this.dimensions.length-1];
 		for (int i=outputLayerLength-1;i>=0;i--) {
 			Node node = this.nodes[this.dimensions.length-1][i];
 			Connection[] inputs = node.getInputs();
 			for (int j=inputs.length-1;j>=0;j--) {
+				if (idealOutputs[i] < 0 || idealOutputs[0] > 1) {
+					throw new IllegalArgumentException("Ideal outputs have to be between 0 and 1.");
+				}
 				inputs[j].calculateDeltaWeight(learningRate, idealOutputs[i] - node.getContent());
 				inputs[j].calculateWeight(momentum);
 			}
@@ -92,7 +131,10 @@ public class NeuralNet {
 		}
 	}
 
-	public void train(double learningRate, double momentum, TrainingData td) {
+	public void train(double learningRate, double momentum, TrainingData td) throws IllegalArgumentException {
+		if (td == null) {
+			throw new IllegalArgumentException("Training data can not be null");
+		}
 		this.setInputs(td.getInputs());
 		this.process();
 		this.backpropagate(learningRate, momentum, td.getOutputs());
