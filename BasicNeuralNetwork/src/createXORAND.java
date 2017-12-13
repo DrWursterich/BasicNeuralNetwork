@@ -4,7 +4,7 @@ import BNN.*;
 public class createXORAND {
 	public static void main(String[] args) {
 		NeuralNet nn = new NeuralNet(new int[] {2, 4, 2});	//AND | XOR
-		String path = "C:\\Users\\Schäper\\Desktop\\Ablage\\BNN\\";
+		String path = "C:\\Users\\Admin\\Desktop\\BNN\\";
 		String file = "XORAND";
 		String fileType = "";
 

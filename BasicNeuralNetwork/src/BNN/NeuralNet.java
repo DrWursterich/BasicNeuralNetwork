@@ -203,6 +203,25 @@ public class NeuralNet {
 			System.out.println();
 		}
 	}
+	
+	public void test(TrainingData[] td, boolean absolute) {
+		double error = 0;
+		for (int i=0;i<td.length;i++) {
+			double[] outputs = getOutputsForInputs(td[i].getInputs());
+			double[] expectedOutputs = td[i].getOutputs();
+			double errorTd = 0;
+			for (int j=outputs.length-1;j>=0;j--) {
+				errorTd += Math.abs(absolute ? ((outputs[j] > 0.5 ? 1 : 0) - (expectedOutputs[j] > 0.5 ? 1 : 0))
+											 : (outputs[j] - expectedOutputs[j]));
+			}
+			errorTd /= outputs.length-1;
+			System.out.println("TrainingData " + StringFormat.dec(i+1, (""+(td.length)).length())
+					+ " Error: " + StringFormat.dec(errorTd, (""+(outputs.length-1)).length(), 4, false, ' '));
+			error += errorTd;
+		}
+		System.out.println("===============================\nError Average: " 
+					+ StringFormat.dec(error/(td.length-1), 1, 4, false, ' '));
+	}
 
 	public void safeToFile(String file, boolean overwrite) throws IOException {
 		RandomAccessFile stream = new RandomAccessFile(file, "rw");
