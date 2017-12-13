@@ -8,12 +8,6 @@ public class createXORAND {
 		String file = "XORAND";
 		String fileType = "";
 
-		try {
-			nn.safeToFile(path + "Networks\\" + file + fileType, true);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
 		TrainingData[] td = new TrainingData[] {
 					new TrainingData(
 						new double[]{0, 0},
@@ -32,7 +26,9 @@ public class createXORAND {
 						new double[]{1, 0}
 					)
 				};
+
 		try {
+			nn.safeToFile(path + "Networks\\" + file + fileType, true);
 			for (int i=0;i<td.length;i++) {
 				td[i].saveToFile(path + "TrainingData\\" + file + fileType, i==0);
 			}

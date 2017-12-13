@@ -60,8 +60,8 @@ public class NeuralNet {
 		if (node < 0 || node >= this.nodes[0].length) {
 			throw new IllegalArgumentException("Node does not exist.");
 		}
-		if (input < 0 || input > 1) {
-			throw new IllegalArgumentException("Input has to be between 0 and 1");
+		if (input < -1 || input > 1) {
+			throw new IllegalArgumentException("Input has to be between -1 and 1");
 		}
 		this.nodes[0][node].setContent(input);
 	}
@@ -124,8 +124,8 @@ public class NeuralNet {
 			Node node = this.nodes[this.dimensions.length-1][i];
 			Connection[] inputs = node.getInputs();
 			for (int j=inputs.length-1;j>=0;j--) {
-				if (idealOutputs[i] < 0 || idealOutputs[0] > 1) {
-					throw new IllegalArgumentException("Ideal outputs have to be between 0 and 1.");
+				if (idealOutputs[i] < -1 || idealOutputs[0] > 1) {
+					throw new IllegalArgumentException("Ideal outputs have to be between -1 and 1.");
 				}
 				inputs[j].calculateDeltaWeight(learningRate, idealOutputs[i] - node.getContent());
 				inputs[j].calculateWeight(momentum);
@@ -166,7 +166,7 @@ public class NeuralNet {
 			throw new IllegalArgumentException("Training data can not be null.");
 		}
 		if (iterations < 1) {
-			throw new IllegalArgumentException("Iterations have to be larger than 1.");
+			throw new IllegalArgumentException("Iterations have to be larger than 0.");
 		}
 		while (iterations-- > 0) {
 			train(learningRate, momentum, td[(int)(Math.random()*(td.length))]);
@@ -214,13 +214,13 @@ public class NeuralNet {
 				errorTd += Math.abs(absolute ? ((outputs[j] > 0.5 ? 1 : 0) - (expectedOutputs[j] > 0.5 ? 1 : 0))
 											 : (outputs[j] - expectedOutputs[j]));
 			}
-			errorTd /= outputs.length-1;
+			errorTd /= outputs.length;
 			System.out.println("TrainingData " + StringFormat.dec(i+1, (""+(td.length)).length())
 					+ " Error: " + StringFormat.dec(errorTd, (""+(outputs.length-1)).length(), 4, false, ' '));
 			error += errorTd;
 		}
 		System.out.println("===============================\nError Average: " 
-					+ StringFormat.dec(error/(td.length-1), 1, 4, false, ' '));
+					+ StringFormat.dec(error/(td.length), 1, 4, false, ' '));
 	}
 
 	public void safeToFile(String file, boolean overwrite) throws IOException {

@@ -108,6 +108,9 @@ public class Node {
 				content += this.inputs[i].getChild().getContent() * this.inputs[i].getWeight();
 			}
 			this.content = (1 / (1 + Math.pow(Math.E, (-1 * content))));
+			if (this.isOutput() && this.content < 0) {
+				this.content = 0;
+			}
 		}
 	}
 }
