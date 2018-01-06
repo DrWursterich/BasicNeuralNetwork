@@ -2,6 +2,27 @@ import BNN.*;
 
 public class TestMain {
 	public static void main(String[] args) {
+		AdvancedNet nn = new AdvancedNet(new int[]{2, 4, 2});
+		double[][][] trainingData = {
+				{
+					{0, 0},
+					{0, 0}
+				},
+				{
+					{0, 1},
+					{0, 1}
+				},
+				{
+					{1, 0},
+					{0, 1}
+				},
+				{
+					{1, 1},
+					{1, 0}
+				}
+		};
+		nn.stochasticGradientDescent(trainingData, 4000, 1, .4, trainingData);
+		/*
 		double learningRate = 0.1;
 		double momentum = 0.1;
 		NeuralNet nn = new NeuralNet(new int[] {2, 4, 2});
@@ -21,5 +42,6 @@ public class TestMain {
 		}
 		
 		nn.test(td, false);
+		*/
 	}
 }
