@@ -21,7 +21,7 @@ public class TestMain {
 					{1, 0}
 				}
 		};
-		nn.stochasticGradientDescent(trainingData, 4000, 1, .4, trainingData);
+		nn.stochasticGradientDescent(trainingData, 200, 2, 0.4, trainingData);
 		/*
 		double learningRate = 0.1;
 		double momentum = 0.1;
