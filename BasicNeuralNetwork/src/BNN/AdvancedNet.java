@@ -1,5 +1,11 @@
 package BNN;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+
 public class AdvancedNet {
 	private static final int INPUT = 0;
 	private static final int OUTPUT = 1;
@@ -8,14 +14,32 @@ public class AdvancedNet {
 	private double[][] biases;
 	private double[][][] weights;
 
-	public AdvancedNet(int[] size) {
-		this.layers = size.length;
-		this.sizes = size;
+	public AdvancedNet(int[] size, double[][] biases, double[][][] weights) {
+		this.sizes = new int[size.length];
+		System.arraycopy(size, 0, this.sizes, 0, size.length);
+		this.layers = this.sizes.length;
 		this.biases = new double[this.layers-1][];
 		this.weights = new double[this.layers-1][][];
 		for (int i=this.layers-1;i>0;i--) {
+			this.biases[i-1] = new double[biases[i-1].length];
+			System.arraycopy(biases[i-1], 0, this.biases[i-1], 0, biases[i-1].length);
 			this.weights[i-1] = new double[this.sizes[i]][];
+			for (int j=this.sizes[i]-1;j>=0;j--) {
+				this.weights[i-1][j] = new double[weights[i-1][j].length];
+				System.arraycopy(weights[i-1][j], 0, this.weights[i-1][j], 0, weights[i-1][j].length);
+			}
+		}
+	}
+
+	public AdvancedNet(int[] size) {
+		this.sizes = new int[size.length];
+		System.arraycopy(size, 0, this.sizes, 0, size.length);
+		this.layers = this.sizes.length;
+		this.biases = new double[this.layers-1][];
+		this.weights = new double[this.layers-1][][];
+		for (int i=this.layers-1;i>0;i--) {
 			this.biases[i-1] = new double[this.sizes[i]];
+			this.weights[i-1] = new double[this.sizes[i]][];
 			for (int j=this.sizes[i]-1;j>=0;j--) {
 				this.biases[i-1][j] = Math.random();
 				this.weights[i-1][j] = new double[this.sizes[i-1]];
@@ -35,49 +59,36 @@ public class AdvancedNet {
 
 	public void stochasticGradientDescent(double[][][] trainingData, int epochs, int miniBatchSize, double learningRate, double[][][] testData) {
 		for (int i=0;i<epochs;i++) {
-			double[][][] newData = new double[trainingData.length][][];
-			for (int j=trainingData.length-1;j>=0;j--) {
-				newData[j] = this.add(trainingData[j], 0);
-			}
-			for (int j=newData.length-1;j>=0;j--) {
-				int swapWith = (int)Math.random()*(newData.length-1);
-				double[][] temp = newData[j];
-				newData[j] = newData[swapWith];
-				newData[swapWith] = temp;
-			}
-			int j = 0;
-			while (j<trainingData.length) {
-				int finalMiniBatchSize = Math.min(miniBatchSize, trainingData.length-j);
-				double[][][] miniBatch = new double[finalMiniBatchSize][][];
-				System.arraycopy(newData, j, miniBatch, 0, finalMiniBatchSize);
-				this.updateMiniBatch(miniBatch, learningRate);
-				j+=finalMiniBatchSize;
-			}
+			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate);
 			System.out.println(String.format("Epoch %5d: %8d / %8d", i+1, this.evaluate(testData, true), testData.length));
 		}
 	}
 
 	public void stochasticGradientDescent(double[][][] trainingData, int epochs, int miniBatchSize, double learningRate) {
 		for (int i=0;i<epochs;i++) {
-			double[][][] newData = new double[trainingData.length][][];
-			for (int j=trainingData.length-1;j>=0;j--) {
-				newData[j] = this.add(trainingData[j], 0);
-			}
-			for (int j=newData.length-1;j>=0;j--) {
-				int swapWith = (int)Math.random()*(newData.length-1);
-				double[][] temp = newData[j];
-				newData[j] = newData[swapWith];
-				newData[swapWith] = temp;
-			}
-			int j = 0;
-			while (j<trainingData.length) {
-				int finalMiniBatchSize = Math.min(miniBatchSize, trainingData.length-j);
-				double[][][] miniBatch = new double[finalMiniBatchSize][][];
-				System.arraycopy(newData, j, miniBatch, 0, finalMiniBatchSize);
-				this.updateMiniBatch(miniBatch, learningRate);
-				j+=finalMiniBatchSize;
-			}
+			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate);
 			System.out.println(String.format("Epoch %5d complete", i+1));
+		}
+	}
+
+	private void stochasticGradientDescentInner(double[][][] trainingData, int miniBatchSize, double learningRate) {
+		double[][][] newData = new double[trainingData.length][][];
+		for (int j=trainingData.length-1;j>=0;j--) {
+			newData[j] = this.add(trainingData[j], 0);
+		}
+		for (int j=newData.length-1;j>=0;j--) {
+			int swapWith = (int)Math.random()*(newData.length-1);
+			double[][] temp = newData[j];
+			newData[j] = newData[swapWith];
+			newData[swapWith] = temp;
+		}
+		int j = 0;
+		while (j<trainingData.length) {
+			int finalMiniBatchSize = Math.min(miniBatchSize, trainingData.length-j);
+			double[][][] miniBatch = new double[finalMiniBatchSize][][];
+			System.arraycopy(newData, j, miniBatch, 0, finalMiniBatchSize);
+			this.updateMiniBatch(miniBatch, learningRate);
+			j+=finalMiniBatchSize;
 		}
 	}
 
@@ -162,6 +173,61 @@ public class AdvancedNet {
 			ret[i] = outputActivations[i] - idealOutput[i];
 		}
 		return ret;
+	}
+
+	public void saveToFile(String file, boolean overwrite) throws IOException {
+		RandomAccessFile stream = new RandomAccessFile(file, "rw");
+		FileChannel channel = stream.getChannel();
+		FileLock lock = null;
+		try {
+			lock = channel.tryLock();
+		} catch (OverlappingFileLockException e) {
+			stream.close();
+			channel.close();
+			throw new IOException("Network has not been saved, file is locked");
+		}
+		if (overwrite) {
+			stream.setLength(0);
+		}
+		stream.seek(stream.length());
+		stream.writeDouble(this.sizes.length);
+		stream.writeDouble(this.sizes[0]);
+		for (int i=0;i<this.sizes.length-1;i++) {
+			stream.writeDouble(this.sizes[i+1]);
+			for (int j=0;j<this.sizes[i+1];j++) {
+				stream.writeDouble(this.biases[i][j]);
+				for (int k=0;k<this.sizes[i];k++) {
+					stream.writeDouble(this.weights[i][j][k]);
+				}
+			}
+		}
+		lock.release();
+		stream.close();
+		channel.close();
+	}
+
+	public static AdvancedNet loadFromFile(String file) throws IOException {
+		RandomAccessFile stream = new RandomAccessFile(file, "rw");
+		FileChannel channel = stream.getChannel();
+		int[] sizes = new int[(int)stream.readDouble()];
+		double[][] biases = new double[sizes.length-1][];
+		double[][][] weights = new double[sizes.length-1][][];
+		sizes[0] = (int)stream.readDouble();
+		for (int i=0;i<sizes.length-1;i++) {
+			sizes[i+1] = (int)stream.readDouble();
+			biases[i] = new double[sizes[i+1]];
+			weights[i] = new double[sizes[i+1]][];
+			for (int j=0;j<sizes[i+1];j++) {
+				biases[i][j] = stream.readDouble();
+				weights[i][j] = new double[sizes[i]];
+				for (int k=0;k<sizes[i];k++) {
+					weights[i][j][k] = stream.readDouble();
+				}
+			}
+		}
+		stream.close();
+		channel.close();
+		return new AdvancedNet(sizes, biases, weights);
 	}
 
 	//MISCELLANEOUS FUNCTIONS
