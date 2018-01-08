@@ -17,10 +17,10 @@ public class AdvancedNet {
 			this.weights[i-1] = new double[this.sizes[i]][];
 			this.biases[i-1] = new double[this.sizes[i]];
 			for (int j=this.sizes[i]-1;j>=0;j--) {
-				this.biases[i-1][j] = 1;//Math.random();
+				this.biases[i-1][j] = Math.random();
 				this.weights[i-1][j] = new double[this.sizes[i-1]];
 				for (int k=this.sizes[i-1]-1;k>=0;k--) {
-					this.weights[i-1][j][k] = 1;//Math.random();
+					this.weights[i-1][j][k] = Math.random();
 				}
 			}
 		}
@@ -37,48 +37,45 @@ public class AdvancedNet {
 		for (int i=0;i<epochs;i++) {
 			double[][][] newData = new double[trainingData.length][][];
 			for (int j=trainingData.length-1;j>=0;j--) {
-				newData[j] = new double[trainingData[j].length][];
-				for (int k=trainingData[j].length-1;k>=0;k--) {
-					newData[j][k] = new double[trainingData[j][k].length];
-					System.arraycopy(trainingData[j][k], 0, newData[j][k], 0, trainingData[j][k].length);
-				}
+				newData[j] = this.add(trainingData[j], 0);
 			}
-//			for (int j=newData.length-1;j>=0;j--) {
-//				int swapWith = (int)Math.random()*(newData.length-1);
-//				double[][] temp = newData[j];
-//				newData[j] = newData[swapWith];
-//				newData[swapWith] = temp;
-//			}
-			double[][][] miniBatch = new double[miniBatchSize][][];
-			for (int j=0;j<newData.length/miniBatchSize;j++) {
-				System.arraycopy(newData, j*miniBatchSize, miniBatch, 0, miniBatchSize);
+			for (int j=newData.length-1;j>=0;j--) {
+				int swapWith = (int)Math.random()*(newData.length-1);
+				double[][] temp = newData[j];
+				newData[j] = newData[swapWith];
+				newData[swapWith] = temp;
+			}
+			int j = 0;
+			while (j<trainingData.length) {
+				int finalMiniBatchSize = Math.min(miniBatchSize, trainingData.length-j);
+				double[][][] miniBatch = new double[finalMiniBatchSize][][];
+				System.arraycopy(newData, j, miniBatch, 0, finalMiniBatchSize);
 				this.updateMiniBatch(miniBatch, learningRate);
+				j+=finalMiniBatchSize;
 			}
 			System.out.println(String.format("Epoch %5d: %8d / %8d", i+1, this.evaluate(testData, true), testData.length));
-			this.printArray(weights);
 		}
 	}
-	
+
 	public void stochasticGradientDescent(double[][][] trainingData, int epochs, int miniBatchSize, double learningRate) {
 		for (int i=0;i<epochs;i++) {
 			double[][][] newData = new double[trainingData.length][][];
 			for (int j=trainingData.length-1;j>=0;j--) {
-				newData[j] = new double[trainingData[j].length][];
-				for (int k=trainingData[j].length-1;k>=0;k--) {
-					newData[j][k] = new double[trainingData[j][k].length];
-					System.arraycopy(trainingData[j][k], 0, newData[j][k], 0, trainingData[j][k].length);
-				}
+				newData[j] = this.add(trainingData[j], 0);
 			}
-//			for (int j=newData.length-1;j>=0;j--) {
-//				int swapWith = (int)Math.random()*(newData.length-1);
-//				double[][] temp = newData[j];
-//				newData[j] = newData[swapWith];
-//				newData[swapWith] = temp;
-//			}
-			double[][][] miniBatch = new double[miniBatchSize][][];
-			for (int j=0;j<newData.length/miniBatchSize;j++) {
-				System.arraycopy(newData, j*miniBatchSize, miniBatch, 0, miniBatchSize);
+			for (int j=newData.length-1;j>=0;j--) {
+				int swapWith = (int)Math.random()*(newData.length-1);
+				double[][] temp = newData[j];
+				newData[j] = newData[swapWith];
+				newData[swapWith] = temp;
+			}
+			int j = 0;
+			while (j<trainingData.length) {
+				int finalMiniBatchSize = Math.min(miniBatchSize, trainingData.length-j);
+				double[][][] miniBatch = new double[finalMiniBatchSize][][];
+				System.arraycopy(newData, j, miniBatch, 0, finalMiniBatchSize);
 				this.updateMiniBatch(miniBatch, learningRate);
+				j+=finalMiniBatchSize;
 			}
 			System.out.println(String.format("Epoch %5d complete", i+1));
 		}
@@ -87,13 +84,17 @@ public class AdvancedNet {
 	private void updateMiniBatch(double[][][] miniBatch, double learningRate) {
 		double[][] nablaBiases = new double[this.biases.length][];
 		double[][][] nablaWeights = new double[this.weights.length][][];
+		nablaBiases = this.multiply(this.biases, 0);
+		for (int i=nablaWeights.length-1;i>=0;i--) {
+			nablaWeights[i] = this.multiply(this.weights[i], 0);
+		}
 		for (int i=miniBatch.length-1;i>=0;i--) {
 			double[][][][] deltaNablas = this.backpropagate(miniBatch[i]);
 			double[][] deltaNablaBiases = deltaNablas[0][0];
 			double[][][] deltaNablaWeights = deltaNablas[1];
-			nablaBiases = this.add(deltaNablaBiases, 0);
+			nablaBiases = this.add(nablaBiases, deltaNablaBiases);
 			for (int j=nablaWeights.length-1;j>=0;j--) {
-				nablaWeights[j] = this.add(deltaNablaWeights[j], 0);
+				nablaWeights[j] = this.add(nablaWeights[j], deltaNablaWeights[j]);
 			}
 		}
 		this.biases = this.subtract(this.biases, this.multiply(nablaBiases, learningRate/miniBatch.length));
@@ -132,7 +133,7 @@ public class AdvancedNet {
 		ret[1] = nablaWeights;
 		return ret;
 	}
-	
+
 	public int evaluate(double[][][] testData, boolean binary) {
 		double[][] results = new double [testData.length][];
 		int sum = 0;
@@ -141,8 +142,6 @@ public class AdvancedNet {
 			boolean equal = true;
 			for (int j=results[i].length-1;j>=0;j--) {
 				if (binary) {
-					//debugging
-					System.out.println(String.format("result: %1.3f | expected: %1.3f", results[i][j], testData[i][OUTPUT][j]));
 					if (Math.round(results[i][j]) != Math.round(testData[i][OUTPUT][j])) {
 						equal = false;
 					}
@@ -156,7 +155,7 @@ public class AdvancedNet {
 		}
 		return sum;
 	}
-	
+
 	private double[] costDeivative(double[] outputActivations, double[] idealOutput) {
 		double[] ret = new double[outputActivations.length];
 		for (int i=outputActivations.length-1;i>=0;i--) {
@@ -164,6 +163,8 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
+
+	//MISCELLANEOUS FUNCTIONS
 
 	private double sigmoid(double x) {
 		return 1.0/(1.0+Math.exp(-x));
@@ -188,7 +189,9 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
+
+
 	private double[] add(double[] a, double[] b) {
 		double[] ret = new double[a.length];
 		for (int i=a.length-1;i>=0;i--) {
@@ -196,7 +199,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[][] add(double[][] a, double[][] b) {
 		double[][] ret = new double[a.length][];
 		for (int i=a.length-1;i>=0;i--) {
@@ -204,7 +207,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[] add(double[] a, double b) {
 		double[] ret = new double[a.length];
 		for (int i=a.length-1;i>=0;i--) {
@@ -212,7 +215,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[][] add(double[][] a, double b) {
 		double[][] ret = new double[a.length][];
 		for (int i=a.length-1;i>=0;i--) {
@@ -220,7 +223,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[] subtract(double[] a, double[] b) {
 		double[] ret = new double[a.length];
 		for (int i=a.length-1;i>=0;i--) {
@@ -228,7 +231,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[][] subtract(double[][] a, double[][] b) {
 		double[][] ret = new double[a.length][];
 		for (int i=a.length-1;i>=0;i--) {
@@ -236,7 +239,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[] multiply(double[] a, double[] b) {
 		double[] ret = new double[a.length];
 		for (int i=a.length-1;i>=0;i--) {
@@ -244,7 +247,8 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
+	@SuppressWarnings("unused")
 	private double[][] multiply(double[][] a, double[][] b) {
 		double[][] ret = new double[a.length][];
 		for (int i=a.length-1;i>=0;i--) {
@@ -252,7 +256,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[] multiply(double[] a, double b) {
 		double[] ret = new double[a.length];
 		for (int i=a.length-1;i>=0;i--) {
@@ -260,7 +264,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[][] multiply(double[][] a, double b) {
 		double[][] ret = new double[a.length][];
 		for (int i=a.length-1;i>=0;i--) {
@@ -268,7 +272,8 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
+	@SuppressWarnings("unused")
 	private double[][] dot(double[][] a, double[][] b) {
 		double[][] ret = new double[a.length][];
 		for (int i=a.length-1;i>=0;i--) {
@@ -282,7 +287,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[] dot(double[][] a, double[] b) {
 		double[] ret = new double[a.length];
 		for (int i=a.length-1;i>=0;i--) {
@@ -294,7 +299,8 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
+	@SuppressWarnings("unused")
 	private double[] dot(double[] a, double[][] b) {
 		double[] ret = new double[b[0].length];
 		for (int i=ret.length-1;i>=0;i--) {
@@ -306,7 +312,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[][] dot(double[] a, double[] b) {
 		double[][] ret = new double[a.length][];
 		for (int i=a.length-1;i>=0;i--) {
@@ -317,7 +323,7 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
 	private double[][] transpose(double[][] a) {
 		double[][] ret = new double[a[0].length][];
 		for (int i=ret.length-1;i>=0;i--) {
@@ -328,7 +334,9 @@ public class AdvancedNet {
 		}
 		return ret;
 	}
-	
+
+	//DEBUGGING FUNCTIONS
+
 	private void printArray(double[] a, int s) {
 		if (a == null) {
 			System.out.print(this.printSpaces(s) + "[ ]");
@@ -340,7 +348,7 @@ public class AdvancedNet {
 			}
 		}
 	}
-	
+
 	private void printArray(double[][] a, int s) {
 		if (a == null) {
 			System.out.print(this.printSpaces(s) + "[\n" + this.printSpaces(s) + "]");
@@ -352,7 +360,7 @@ public class AdvancedNet {
 			}
 		}
 	}
-	
+
 	private void printArray(double[][][] a, int s) {
 		if (a == null) {
 			System.out.print(this.printSpaces(s) + "[\n" + this.printSpaces(s) + "]");
@@ -364,21 +372,25 @@ public class AdvancedNet {
 			}
 		}
 	}
+
+	@SuppressWarnings("unused")
 	private void printArray(double[] a) {
 		this.printArray(a, 0);
 		System.out.println();
 	}
-	
+
+	@SuppressWarnings("unused")
 	private void printArray(double[][] a) {
 		this.printArray(a, 0);
 		System.out.println();
 	}
-	
+
+	@SuppressWarnings("unused")
 	private void printArray(double[][][] a) {
 		this.printArray(a, 0);
 		System.out.println();
 	}
-	
+
 	private String printSpaces(int s) {
 		String ret = "";
 		for (int i=s;i>0;i--) {
