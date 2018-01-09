@@ -151,18 +151,22 @@ public class AdvancedNet {
 		for (int i=testData.length-1;i>=0;i--) {
 			results[i] = this.feedForward(testData[i][INPUT]);
 			boolean equal = true;
+			double highestResult = 0;
+			double wanted = 0;
 			for (int j=results[i].length-1;j>=0;j--) {
-				if (binary) {
-					if (Math.round(results[i][j]) != Math.round(testData[i][OUTPUT][j])) {
-						equal = false;
-					}
-				} else {
-					if (Math.abs(results[i][j] - testData[i][OUTPUT][j]) <= .1) {
-						equal = false;
-					}
-				}
+				highestResult = results[i][j] > highestResult ? j : highestResult;
+				wanted = testData[i][OUTPUT][j] > wanted ? j : wanted;
+//				if (binary) {
+//					if (Math.round(results[i][j]) != Math.round(testData[i][OUTPUT][j])) {
+//						equal = false;
+//					}
+//				} else {
+//					if (Math.abs(results[i][j] - testData[i][OUTPUT][j]) <= .1) {
+//						equal = false;
+//					}
+//				}
 			}
-			sum += equal ? 1 : 0;
+			sum += highestResult == wanted ? 1 : 0;
 		}
 		return sum;
 	}

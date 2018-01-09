@@ -20,7 +20,7 @@ public class HandwritingRecognition {
 	private static final int IMAGE_X = 12;
 	private static final int IMAGE_Y = 35;
 	private static final int BORDER_SIZE = 1;
-	private static final int BRUSH_RADIUS = 2;
+	private static final int BRUSH_RADIUS = 1;
 	private static AdvancedNet nn;
 
 	public HandwritingRecognition() {
@@ -93,7 +93,7 @@ public class HandwritingRecognition {
 				}
 				double[] output = nn.feedForward(imageInput);
 				for (int i=0;i<output.length;i++) {
-					System.out.println(i + ": " + output[i]);
+					System.out.println(String.format("%2d: %1.8f", i, output[i]));
 				}
 			}
 		});
@@ -116,20 +116,10 @@ public class HandwritingRecognition {
 
 	public static void main(String[] args) {
 		new HandwritingRecognition();
-		double[][][] trainingData = new double[1][][];
-		trainingData[0] = new double[2][];
-		trainingData[0][0] = new double[784];
-		trainingData[0][1] = new double[10];
 		nn = new AdvancedNet(new int[]{784, 30, 10});
-		nn.stochasticGradientDescent(trainingData, 30, 10, 3);
-		String file = "C:\\Users\\Schäper\\Desktop\\nn.ini";
-		try {
-			//nn.saveToFile(file, true);
-			AdvancedNet nn2 = AdvancedNet.loadFromFile(file);
-			nn2.stochasticGradientDescent(trainingData, 1, 2, 0.4, trainingData);
-		} catch (IOException e) {
-			System.out.println(e.getMessage());
-		}
+		double[][][] trainingData = mnistLoader.loadData("JavaTrainingData2.ini");
+		double[][][] testData = mnistLoader.loadData("JavaTestData2.ini");
+		nn.stochasticGradientDescent(trainingData, 30, 10, 3, testData);
 		int last_mouse_x = mouse_x;
 		int last_mouse_y = mouse_y;
 		while (true) {
