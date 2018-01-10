@@ -92,7 +92,7 @@ public class HandwritingRecognition {
 					}
 				}
 				double[] output = nn.feedForward(imageInput);
-				System.out.println("OUTPUTS\n--------------------------------------------------");
+				System.out.println("--------------------------------------------------");
 				for (int i=0;i<output.length;i++) {
 					System.out.println(String.format("%2d: %1.8f", i, output[i]));
 				}
@@ -120,7 +120,7 @@ public class HandwritingRecognition {
 		nn = new AdvancedNet(new int[]{784, 30, 10});
 		double[][][] trainingData = mnistLoader.loadArray("JavaTrainingData3.ini");
 		double[][][] testData = mnistLoader.loadArray("JavaTestData3.ini");
-		nn.stochasticGradientDescent(trainingData, 10, 10, 1, testData);
+		nn.stochasticGradientDescent(trainingData, 30, 5, 1, testData);
 		int last_mouse_x = mouse_x;
 		int last_mouse_y = mouse_y;
 		while (true) {

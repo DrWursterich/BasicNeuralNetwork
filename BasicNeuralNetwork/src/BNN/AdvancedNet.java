@@ -61,6 +61,11 @@ public class AdvancedNet {
 		for (int i=0;i<epochs;i++) {
 			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate);
 			System.out.println(String.format("Epoch %5d: %8d / %8d", i+1, this.evaluate(testData, true), testData.length));
+			double[] output = this.feedForward(trainingData[0][0]);
+			for (int j=0;j<output.length;j++) {
+				System.out.println(String.format("%2d: %1.8f expected: %1d", j, output[j], (int)trainingData[0][1][j]));
+			}
+			System.out.println();
 		}
 	}
 
@@ -68,6 +73,11 @@ public class AdvancedNet {
 		for (int i=0;i<epochs;i++) {
 			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate);
 			System.out.println(String.format("Epoch %5d complete", i+1));
+			double[] output = this.feedForward(trainingData[0][0]);
+			for (int j=0;j<output.length;j++) {
+				System.out.println(String.format("%2d: %1.8f expected: %1d", j, output[j], (int)trainingData[0][1][j]));
+			}
+			System.out.println();
 		}
 	}
 
@@ -150,21 +160,11 @@ public class AdvancedNet {
 		int sum = 0;
 		for (int i=testData.length-1;i>=0;i--) {
 			results[i] = this.feedForward(testData[i][INPUT]);
-			boolean equal = true;
 			double highestResult = 0;
 			double wanted = 0;
 			for (int j=results[i].length-1;j>=0;j--) {
 				highestResult = results[i][j] > highestResult ? j : highestResult;
 				wanted = testData[i][OUTPUT][j] > wanted ? j : wanted;
-//				if (binary) {
-//					if (Math.round(results[i][j]) != Math.round(testData[i][OUTPUT][j])) {
-//						equal = false;
-//					}
-//				} else {
-//					if (Math.abs(results[i][j] - testData[i][OUTPUT][j]) <= .1) {
-//						equal = false;
-//					}
-//				}
 			}
 			sum += highestResult == wanted ? 1 : 0;
 		}
