@@ -117,8 +117,8 @@ public class HandwritingRecognition {
 	public static void main(String[] args) {
 		new HandwritingRecognition();
 		nn = new AdvancedNet(new int[]{784, 30, 10});
-		double[][][] trainingData = mnistLoader.loadData("JavaTrainingData2.ini");
-		double[][][] testData = mnistLoader.loadData("JavaTestData2.ini");
+		double[][][] trainingData = mnistLoader.loadOldData("JavaTrainingData.ini");
+		double[][][] testData = mnistLoader.loadOldData("JavaTestData.ini");
 		nn.stochasticGradientDescent(trainingData, 30, 10, 3, testData);
 		int last_mouse_x = mouse_x;
 		int last_mouse_y = mouse_y;

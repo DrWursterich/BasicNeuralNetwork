@@ -8,22 +8,18 @@ import java.util.ArrayList;
 /***
  * class to load mnist data from specific files
  *
- * @author schäper
+ * @author Mario Sch�per
  */
 public class mnistLoader {
-	private static String path = "C:\\Users\\Schäper\\Desktop\\mnist_data\\";
+	private static String path = "C:\\Users\\Admin\\Desktop\\mnist_data\\";
 
 	/***
-	 * <u>converts</u> plain txt files of training data into binary ini files
+	 * somehow the old function takes <b>5 fucking minutes longer</b>
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		double[][][] trainingData = mnistLoader.loadOldData("JavaTestData.ini");
-		mnistLoader.saveData(trainingData, "JavaTestData2.ini", true);
-		trainingData = mnistLoader.loadOldData("JavaTrainingData.ini");
-		mnistLoader.saveData(trainingData, "JavaTrainingData2.ini", true);
-		trainingData = mnistLoader.loadOldData("JavaValidationData.ini");
-		mnistLoader.saveData(trainingData, "JavaValidationData2.ini", true);
+		double[][][] trainingData = mnistLoader.loadOldData("JavaValidationData.ini");	//takes 3 minutes
+		trainingData = mnistLoader.loadData("JavaValidationData2.ini");					//takes 8 minutes ?????
 	}
 
 	/***
@@ -68,6 +64,7 @@ public class mnistLoader {
 	 * @return array of the loaded outputs
 	 */
 	public static double[][] loadInputs(String fileName) {
+		double startTime = System.nanoTime();
 		double[][] ret = new double[0][];
 		try {
 			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
@@ -130,7 +127,7 @@ public class mnistLoader {
 				}
 				lastChar = toAdd;
 			}
-			System.out.println("loading inputs complete");
+			System.out.println(String.format("loading inputs complete in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
 			stream.close();
 			channel.close();
 		} catch(IOException e) {
@@ -146,8 +143,9 @@ public class mnistLoader {
 	 * @return array fo the loaded outputs
 	 */
 	public static double[] loadResults(String fileName) {
+		double startTime = System.nanoTime();
 		double[] ret = null;
-		try {
+		try {			
 			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
 			FileChannel channel = stream.getChannel();
 			ret = new double[(int)stream.length()];
@@ -160,7 +158,7 @@ public class mnistLoader {
 			}
 			stream.close();
 			channel.close();
-			System.out.println("loading results complete");
+			System.out.println(String.format("loading results complete in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
 		} catch(IOException e) {
 			System.out.println("loading results failed");
 			e.printStackTrace();
@@ -175,6 +173,7 @@ public class mnistLoader {
 	 * @param overwrite whether the file should be overwritten, if it exists or not
 	 */
 	public static void saveData(double[][][] data, String fileName, boolean overwrite) {
+		double startTime = System.nanoTime();
 		try {
 			RandomAccessFile stream = new RandomAccessFile(path + fileName, "rw");
 			FileChannel channel = stream.getChannel();
@@ -193,7 +192,7 @@ public class mnistLoader {
 			stream.writeInt(data.length);
 			for (int i=data.length-1;i>=0;i--) {
 				stream.writeInt(data[i].length);
-				for (int j=data.length-1;j>=0;j--) {
+				for (int j=data[i].length-1;j>=0;j--) {
 					stream.writeInt(data[i][j].length);
 				}
 			}
@@ -210,7 +209,7 @@ public class mnistLoader {
 			lock.release();
 			stream.close();
 			channel.close();
-			System.out.println("data saving complete");
+			System.out.println(String.format("saving data complete in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
 		} catch (IOException e) {
 			System.out.println("data saving failed");
 			e.printStackTrace();
@@ -223,6 +222,7 @@ public class mnistLoader {
 	 * @return a array of the loaded data
 	 */
 	public static double[][][] loadOldData(String fileName) {
+		double startTime = System.nanoTime();
 		double[][][] ret = null;
 		try {
 			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
@@ -242,7 +242,7 @@ public class mnistLoader {
 			}
 			stream.close();
 			channel.close();
-			System.out.println("loading data complete");
+			System.out.println(String.format("loading data complete in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
 		} catch(IOException e) {
 			System.out.println("loading data failed");
 			e.printStackTrace();
@@ -256,6 +256,7 @@ public class mnistLoader {
 	 * @return a array of the loaded data
 	 */
 	public static double[][][] loadData(String fileName) {
+		double startTime = System.nanoTime();
 		double[][][] ret = null;
 		try {
 			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
@@ -279,7 +280,8 @@ public class mnistLoader {
 			}
 			stream.close();
 			channel.close();
-			System.out.println("loading data complete");
+			System.out.println(String.format("loading data complete in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
+			
 		} catch(IOException e) {
 			System.out.println("loading data failed");
 			e.printStackTrace();
