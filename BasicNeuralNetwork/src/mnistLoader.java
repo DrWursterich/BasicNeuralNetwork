@@ -1,4 +1,9 @@
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -18,8 +23,11 @@ public class mnistLoader {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		double[][][] trainingData = mnistLoader.loadOldData("JavaValidationData.ini");	//takes 3 minutes
-		trainingData = mnistLoader.loadData("JavaValidationData2.ini");					//takes 8 minutes ?????
+		@SuppressWarnings("unused")
+		double[][][] trainingData = null;
+		trainingData = mnistLoader.loadData("JavaTrainingData.ini");					//takes 3 minutes
+		trainingData = mnistLoader.loadDataAlternative("JavaValidationData2.ini");		//takes 8 minutes ?????
+		trainingData = mnistLoader.loadArray("JavaValidationData3.ini");				//takes less than 2 seconds
 	}
 
 	/***
@@ -28,8 +36,8 @@ public class mnistLoader {
 	 */
 	@SuppressWarnings("unused")
 	private static double[][][] loadTrainingDataTxt() {
-		double[][] trainingInputs = loadInputs("TestData.txt");
-		double[][] trainingOutputs = loadResultsWrapper("TestDataResults.txt");
+		double[][] trainingInputs = loadInputsTxt("TestData.txt");
+		double[][] trainingOutputs = loadResultsTxtWrapper("TestDataResults.txt");
 		double[][][] trainingData = new double[trainingOutputs.length][][];
 		for (int i=0;i<trainingData.length;i++) {
 			trainingData[i] = new double[2][];
@@ -44,8 +52,8 @@ public class mnistLoader {
 	 * @param fileName the file to load from
 	 * @return formatted array of the loaded outputs
 	 */
-	public static double[][] loadResultsWrapper(String fileName) {
-		double[] trainingResults = loadResults(fileName);
+	public static double[][] loadResultsTxtWrapper(String fileName) {
+		double[] trainingResults = loadResultsTxt(fileName);
 		double[][] trainingOutputs = new double[trainingResults.length][];
 		double[] temp;
 		for (int i=0;i<trainingOutputs.length;i++) {
@@ -63,7 +71,7 @@ public class mnistLoader {
 	 * @param fileName the file to load from
 	 * @return array of the loaded outputs
 	 */
-	public static double[][] loadInputs(String fileName) {
+	public static double[][] loadInputsTxt(String fileName) {
 		double startTime = System.nanoTime();
 		double[][] ret = new double[0][];
 		try {
@@ -142,7 +150,7 @@ public class mnistLoader {
 	 * @param fileName the file to load from
 	 * @return array fo the loaded outputs
 	 */
-	public static double[] loadResults(String fileName) {
+	public static double[] loadResultsTxt(String fileName) {
 		double startTime = System.nanoTime();
 		double[] ret = null;
 		try {			
@@ -221,7 +229,7 @@ public class mnistLoader {
 	 * @param fileName the name of the file to load from
 	 * @return a array of the loaded data
 	 */
-	public static double[][][] loadOldData(String fileName) {
+	public static double[][][] loadData(String fileName) {
 		double startTime = System.nanoTime();
 		double[][][] ret = null;
 		try {
@@ -255,7 +263,7 @@ public class mnistLoader {
 	 * @param fileName the name of the file to load from
 	 * @return a array of the loaded data
 	 */
-	public static double[][][] loadData(String fileName) {
+	public static double[][][] loadDataAlternative(String fileName) {
 		double startTime = System.nanoTime();
 		double[][][] ret = null;
 		try {
@@ -284,6 +292,48 @@ public class mnistLoader {
 			
 		} catch(IOException e) {
 			System.out.println("loading data failed");
+			e.printStackTrace();
+		}
+		return ret;
+	}
+	
+	/***
+	 * function 3
+	 * @param fileName
+	 * @return
+	 */
+	public static void saveArray(double[][][] a, String fileName) {
+		try {
+			double startTime = System.nanoTime();
+			FileOutputStream f = new FileOutputStream(path + fileName);
+			ObjectOutput s = new ObjectOutputStream(f);
+			s.writeObject(a);
+			s.close();
+			f.close();
+			System.out.println(String.format("saving array finished in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
+		} catch (IOException e) {
+			System.out.println("array saving failed");
+			e.printStackTrace();
+		}
+	}
+	
+	/***
+	 * function 3
+	 * @param fileName
+	 * @return
+	 */
+	public static double[][][] loadArray(String fileName) {
+		double[][][] ret = null;
+		try {
+			double startTime = System.nanoTime();
+			FileInputStream f = new FileInputStream(path + fileName);
+			ObjectInputStream s = new ObjectInputStream(f);
+			ret = (double[][][]) s.readObject();
+			s.close();
+			f.close();
+			System.out.println(String.format("loading array finished in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
+		} catch (IOException | ClassNotFoundException e) {
+			System.out.println("array saving failed");
 			e.printStackTrace();
 		}
 		return ret;
