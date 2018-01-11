@@ -16,19 +16,7 @@ import java.util.ArrayList;
  * @author Mario Schaeper
  */
 public class mnistLoader {
-	private static String path = "C:\\Users\\Schäper\\Desktop\\mnist_data\\";
-
-	/***
-	 * somehow the old function takes <b>5 fucking minutes longer</b>
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		@SuppressWarnings("unused")
-		double[][][] trainingData = null;
-		trainingData = mnistLoader.loadData("JavaTrainingDataOld.ini");					//takes 3 minutes
-		trainingData = mnistLoader.loadDataAlternative("JavaValidationData2.ini");		//takes 8 minutes ?????
-		trainingData = mnistLoader.loadArray("JavaValidationData.ini");					//takes less than 2 seconds
-	}
+	private static String path = "mnistData\\";
 
 	/***
 	 * Loads training data from <b>trainingData.txt</b> and <b>trainingDataResults.txt</b>
@@ -332,7 +320,7 @@ public class mnistLoader {
 			f.close();
 			System.out.println(String.format("loading array finished in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
 		} catch (IOException | ClassNotFoundException e) {
-			System.out.println("array saving failed");
+			System.out.println("array loading failed");
 			e.printStackTrace();
 		}
 		return ret;
