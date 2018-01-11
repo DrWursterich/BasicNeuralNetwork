@@ -93,10 +93,31 @@ public class HandwritingRecognition {
 					}
 				}
 				double[] output = nn.feedForward(imageInput);
-				System.out.println("--------------------------------------------------");
+				double[] ranking[] = new double[output.length][];
 				for (int i=0;i<output.length;i++) {
-					System.out.println(String.format("%2d: %1.8f", i, output[i]));
+					ranking[i] = new double[2];
+					double[] toInsert = new double[2];
+					toInsert[0] = i;
+					toInsert[1] = output[i];
+					for (int j=0;j<=i;j++) {
+						if (toInsert[1] > ranking[j][1]) {
+							double[] temp = ranking[j];
+							ranking[j] = toInsert;
+							toInsert = temp;
+						}
+					}
 				}
+//				for (int i=0;i<output.length;i++) {
+//					System.out.println(String.format("%2d: %1.8f", (int)ranking[i][0], ranking[i][1]));
+//				}
+				String[] conclusions = {"this is unlikely a ", "it might be a ", "i guess this is a ", "this is probably a ", "this is a "};
+				System.out.println(conclusions[(int)Math.ceil(ranking[0][1]*5)-1] + (int)ranking[0][0]);
+				for (int i=1;i<ranking.length;i++) {
+					if (ranking[i][1] >= 0.1 && ranking[i-1][1] - ranking[i][1] < 0.35) {
+						System.out.println(conclusions[(int)Math.ceil(ranking[i][1]*5)-1] + (int)ranking[i][0]);
+					}
+				}
+				System.out.println();
 			}
 		});
 		panel.add(submit, BorderLayout.EAST);
@@ -120,8 +141,8 @@ public class HandwritingRecognition {
 		new HandwritingRecognition();
 		double[][][] trainingData = mnistLoader.loadArray("JavaTrainingData.ini");
 		double[][][] testData = mnistLoader.loadArray("JavaTestData.ini");
-		nn = new AdvancedNet(new int[]{784, 30, 10});
-		nn.stochasticGradientDescent(trainingData, 15, 10, 3.0, testData);
+		nn = new AdvancedNet(new int[]{784, 50, 10});
+		nn.stochasticGradientDescent(trainingData, 20, 10, 3.0, testData);
 		int last_mouse_x = mouse_x;
 		int last_mouse_y = mouse_y;
 		while (true) {
