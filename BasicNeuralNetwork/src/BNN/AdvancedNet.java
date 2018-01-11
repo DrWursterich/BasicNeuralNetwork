@@ -60,17 +60,21 @@ public class AdvancedNet {
 	}
 
 	public void stochasticGradientDescent(double[][][] trainingData, int epochs, int miniBatchSize, double learningRate, double[][][] testData) {
+		double startTime = System.nanoTime();
 		for (int i=0;i<epochs;i++) {
 			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate);
 			System.out.println(String.format("Epoch %5d: %8d / %8d", i+1, this.evaluate(testData, true), testData.length));
 		}
+		System.out.println(String.format("finished training in %5.8f seconds", (System.nanoTime()-startTime)/1000000000));
 	}
 
 	public void stochasticGradientDescent(double[][][] trainingData, int epochs, int miniBatchSize, double learningRate) {
+		double startTime = System.nanoTime();
 		for (int i=0;i<epochs;i++) {
 			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate);
 			System.out.println(String.format("Epoch %5d complete", i+1));
 		}
+		System.out.println(String.format("finished training in %5.8f seconds", (System.nanoTime()-startTime)/1000000000));
 	}
 
 	private void stochasticGradientDescentInner(double[][][] trainingData, int miniBatchSize, double learningRate) {
