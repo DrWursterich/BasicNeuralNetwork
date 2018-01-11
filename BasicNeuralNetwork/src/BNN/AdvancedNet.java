@@ -41,31 +41,28 @@ public class AdvancedNet {
 			this.biases[i-1] = new double[this.sizes[i]];
 			this.weights[i-1] = new double[this.sizes[i]][];
 			for (int j=this.sizes[i]-1;j>=0;j--) {
-				this.biases[i-1][j] = Math.random();
+				this.biases[i-1][j] = 2*Math.random()-1;
 				this.weights[i-1][j] = new double[this.sizes[i-1]];
 				for (int k=this.sizes[i-1]-1;k>=0;k--) {
-					this.weights[i-1][j][k] = Math.random();
+					this.weights[i-1][j][k] = 2*Math.random()-1;
 				}
 			}
 		}
 	}
 
 	public double[] feedForward(double[] input) {
+		double[] ret = new double[input.length];
+		System.arraycopy(input, 0, ret, 0, input.length);
 		for (int i=0;i<this.layers-1;i++) {
-			input = this.sigmoid(this.add(this.dot(this.weights[i], input), this.biases[i]));
+			ret = this.sigmoid(this.add(this.dot(this.weights[i], ret), this.biases[i]));
 		}
-		return input;
+		return ret;
 	}
 
 	public void stochasticGradientDescent(double[][][] trainingData, int epochs, int miniBatchSize, double learningRate, double[][][] testData) {
 		for (int i=0;i<epochs;i++) {
 			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate);
 			System.out.println(String.format("Epoch %5d: %8d / %8d", i+1, this.evaluate(testData, true), testData.length));
-			double[] output = this.feedForward(trainingData[0][0]);
-			for (int j=0;j<output.length;j++) {
-				System.out.println(String.format("%2d: %1.8f expected: %1d", j, output[j], (int)trainingData[0][1][j]));
-			}
-			System.out.println();
 		}
 	}
 
@@ -73,11 +70,6 @@ public class AdvancedNet {
 		for (int i=0;i<epochs;i++) {
 			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate);
 			System.out.println(String.format("Epoch %5d complete", i+1));
-			double[] output = this.feedForward(trainingData[0][0]);
-			for (int j=0;j<output.length;j++) {
-				System.out.println(String.format("%2d: %1.8f expected: %1d", j, output[j], (int)trainingData[0][1][j]));
-			}
-			System.out.println();
 		}
 	}
 
@@ -160,11 +152,11 @@ public class AdvancedNet {
 		int sum = 0;
 		for (int i=testData.length-1;i>=0;i--) {
 			results[i] = this.feedForward(testData[i][INPUT]);
-			double highestResult = 0;
-			double wanted = 0;
+			int highestResult = 0;
+			int wanted = 0;
 			for (int j=results[i].length-1;j>=0;j--) {
-				highestResult = results[i][j] > highestResult ? j : highestResult;
-				wanted = testData[i][OUTPUT][j] > wanted ? j : wanted;
+				highestResult = results[i][j] > results[i][highestResult] ? j : highestResult;
+				wanted = testData[i][OUTPUT][j] > testData[i][OUTPUT][wanted] ? j : wanted;
 			}
 			sum += highestResult == wanted ? 1 : 0;
 		}

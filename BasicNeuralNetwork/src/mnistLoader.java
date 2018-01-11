@@ -13,10 +13,10 @@ import java.util.ArrayList;
 /***
  * class to load mnist data from specific files
  *
- * @author Mario Sch‰per
+ * @author Mario Schaeper
  */
 public class mnistLoader {
-	private static String path = "C:\\Users\\Admin\\Desktop\\mnist_data\\";
+	private static String path = "C:\\Users\\Sch√§per\\Desktop\\mnist_data\\";
 
 	/***
 	 * somehow the old function takes <b>5 fucking minutes longer</b>
@@ -25,9 +25,9 @@ public class mnistLoader {
 	public static void main(String[] args) {
 		@SuppressWarnings("unused")
 		double[][][] trainingData = null;
-		trainingData = mnistLoader.loadData("JavaTrainingData.ini");					//takes 3 minutes
+		trainingData = mnistLoader.loadData("JavaTrainingDataOld.ini");					//takes 3 minutes
 		trainingData = mnistLoader.loadDataAlternative("JavaValidationData2.ini");		//takes 8 minutes ?????
-		trainingData = mnistLoader.loadArray("JavaValidationData3.ini");				//takes less than 2 seconds
+		trainingData = mnistLoader.loadArray("JavaValidationData.ini");					//takes less than 2 seconds
 	}
 
 	/***
@@ -153,7 +153,7 @@ public class mnistLoader {
 	public static double[] loadResultsTxt(String fileName) {
 		double startTime = System.nanoTime();
 		double[] ret = null;
-		try {			
+		try {
 			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
 			FileChannel channel = stream.getChannel();
 			ret = new double[(int)stream.length()];
@@ -289,18 +289,17 @@ public class mnistLoader {
 			stream.close();
 			channel.close();
 			System.out.println(String.format("loading data complete in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
-			
+
 		} catch(IOException e) {
 			System.out.println("loading data failed");
 			e.printStackTrace();
 		}
 		return ret;
 	}
-	
+
 	/***
-	 * function 3
-	 * @param fileName
-	 * @return
+	 * Saves an array to a file
+	 * @param fileName the file name
 	 */
 	public static void saveArray(double[][][] a, String fileName) {
 		try {
@@ -316,11 +315,11 @@ public class mnistLoader {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/***
-	 * function 3
-	 * @param fileName
-	 * @return
+	 * Loads an array from a file
+	 * @param fileName the file name
+	 * @return the loaded array
 	 */
 	public static double[][][] loadArray(String fileName) {
 		double[][][] ret = null;

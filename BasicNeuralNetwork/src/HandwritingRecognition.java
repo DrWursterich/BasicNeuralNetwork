@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+@SuppressWarnings("unused")
 public class HandwritingRecognition {
 	private static JFrame frame;
 	private static JButton submit;
@@ -88,7 +89,7 @@ public class HandwritingRecognition {
 				int k = 0;
 				for (int i=0;i<28;i++) {
 					for (int j=0;j<28;j++) {
-						imageInput[k++] = image[i][j];
+						imageInput[k++] = 1-image[i][j]/255;
 					}
 				}
 				double[] output = nn.feedForward(imageInput);
@@ -117,13 +118,16 @@ public class HandwritingRecognition {
 
 	public static void main(String[] args) {
 		new HandwritingRecognition();
+		double[][][] trainingData = mnistLoader.loadArray("JavaTrainingData.ini");
+		double[][][] testData = mnistLoader.loadArray("JavaTestData.ini");
 		nn = new AdvancedNet(new int[]{784, 30, 10});
-		double[][][] trainingData = mnistLoader.loadArray("JavaTrainingData3.ini");
-		double[][][] testData = mnistLoader.loadArray("JavaTestData3.ini");
-		nn.stochasticGradientDescent(trainingData, 30, 5, 1, testData);
+		nn.stochasticGradientDescent(trainingData, 15, 10, 3.0, testData);
 		int last_mouse_x = mouse_x;
 		int last_mouse_y = mouse_y;
 		while (true) {
+//			if (System.nanoTime()%4000000000.0 <= 1000000) {
+//				showDataImage(trainingData, (int)(Math.random()*(trainingData.length-1)));
+//			}
 			setMousePos();
 			if (pressed && (mouse_x != last_mouse_x || mouse_y != last_mouse_y)) {
 				if (mouse_x >= IMAGE_X && mouse_x <= IMAGE_X+PIXEL_COUNT*PIXEL_SIZE
@@ -134,6 +138,15 @@ public class HandwritingRecognition {
 			last_mouse_x = mouse_x;
 			last_mouse_y = mouse_y;
 		}
+	}
+
+	private static void showDataImage(double[][][] data, int imageNumber) {
+		for (int i=0;i<28;i++) {
+			for (int j=0;j<28;j++) {
+				image[i][j] = 255-(int)(data[imageNumber][0][i*28+j]*255);
+			}
+		}
+		frame.repaint();
 	}
 
 	private static void resetImage() {
@@ -158,7 +171,7 @@ public class HandwritingRecognition {
 		for (int i=pixel_x-BRUSH_RADIUS;i<=pixel_x+BRUSH_RADIUS;i++) {
 			for (int j=pixel_y-BRUSH_RADIUS;j<=pixel_y+BRUSH_RADIUS;j++) {
 				if (i >= 0 && i < PIXEL_COUNT && j >= 0 && j < PIXEL_COUNT) {
-					image[j][i] -= (int)((1-((Math.abs(i-pixel_x)+Math.abs(j-pixel_y))/((double)BRUSH_RADIUS*2.0)))*255);
+					image[j][i] -= (int)((1-((Math.abs(i-pixel_x)+Math.abs(j-pixel_y))/((double)BRUSH_RADIUS*2.0)))*127);
 					if (image[j][i]>255) {
 						image[j][i] = 255;
 					}
