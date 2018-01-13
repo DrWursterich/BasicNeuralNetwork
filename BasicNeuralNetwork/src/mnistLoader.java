@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -9,6 +10,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipEntry;
 
 /***
  * class to load mnist data from specific files
@@ -22,8 +25,7 @@ public class mnistLoader {
 	 * Loads training data from <b>trainingData.txt</b> and <b>trainingDataResults.txt</b>
 	 * @return fileName combined array of inputs and outputs of the loaded training data
 	 */
-	@SuppressWarnings("unused")
-	private static double[][][] loadTrainingDataTxt() {
+	public static double[][][] loadTrainingDataTxt() {
 		double[][] trainingInputs = loadInputsTxt("TestData.txt");
 		double[][] trainingOutputs = loadResultsTxtWrapper("TestDataResults.txt");
 		double[][][] trainingData = new double[trainingOutputs.length][][];
@@ -321,6 +323,75 @@ public class mnistLoader {
 			System.out.println(String.format("loading array finished in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
 		} catch (IOException | ClassNotFoundException e) {
 			System.out.println("array loading failed");
+			e.printStackTrace();
+		}
+		return ret;
+	}
+
+	/***
+	 * unpacks a .zip file
+	 * @param fileName the .zip-file name
+	 */
+	public static void unzip(String fileName) {
+		double startTime = System.nanoTime();
+		byte[] buffer = new byte[1024];
+		try {
+			ZipInputStream s = new ZipInputStream(new FileInputStream(path + fileName));
+			ZipEntry ze = s.getNextEntry();
+			while (ze != null) {
+				File newFile = new File(path + ze.getName());
+				if (!newFile.exists()) {
+					FileOutputStream fs = new FileOutputStream(newFile);
+					int len;
+					while ((len = s.read(buffer)) > 0) {
+						fs.write(buffer, 0, len);
+					}
+					fs.close();
+					System.out.println("unzipped " + newFile.getAbsoluteFile());
+				}
+				ze = s.getNextEntry();
+			}
+			s.closeEntry();
+			s.close();
+			System.out.println(String.format("unzipping finished in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
+		} catch (IOException e) {
+			System.out.println("unzipping failed");
+			e.printStackTrace();
+		}
+	}
+
+	/***
+	 * loads an array from a file inside a .zip file
+	 * @param zipName the name of the .zip-file
+	 * @param fileName the name of the file to load from
+	 */
+	public static double[][][] loadArrayZip(String zipName, String fileName) {
+		double[][][] ret = null;
+		double startTime = System.nanoTime();
+		try {
+			ZipInputStream s = new ZipInputStream(new FileInputStream(path + zipName));
+			ZipEntry ze = s.getNextEntry();
+			while (ze != null) {
+				File newFile = new File(path + ze.getName());
+				if (newFile.getName().equals(fileName)) {
+					System.out.println("found " + newFile.getAbsoluteFile());
+					FileInputStream f = new FileInputStream(path + fileName);
+					ObjectInputStream is = new ObjectInputStream(f);
+					ret = (double[][][]) is.readObject();
+					is.close();
+					f.close();
+				}
+				ze = s.getNextEntry();
+			}
+			s.closeEntry();
+			s.close();
+			if (ret == null) {
+				System.out.println("file not found");
+			} else {
+				System.out.println(String.format("loading finished in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
+			}
+		} catch (IOException | ClassNotFoundException e) {
+			System.out.println("loading failed");
 			e.printStackTrace();
 		}
 		return ret;

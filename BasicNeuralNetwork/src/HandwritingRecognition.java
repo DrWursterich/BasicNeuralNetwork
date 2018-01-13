@@ -132,17 +132,19 @@ public class HandwritingRecognition {
 		});
 		panel.add(reset, BorderLayout.SOUTH);
 
-		frame.setVisible(true);
-
 		resetImage();
 	}
+	
 
 	public static void main(String[] args) {
 		new HandwritingRecognition();
-		double[][][] trainingData = mnistLoader.loadArray("TrainingData.ini");
-		double[][][] testData = mnistLoader.loadArray("TestData.ini");
+		double[][][] trainingData = mnistLoader.loadArrayZip("mnistData.zip", "TrainingData.ini");
+		double[][][] testData = mnistLoader.loadArrayZip("mnistData.zip", "TestData.ini");
 		nn = new AdvancedNet(new int[]{784, 50, 10});
-		nn.stochasticGradientDescent(trainingData, 20, 10, 3.0, testData);
+		if (trainingData != null && testData != null) { 
+			nn.stochasticGradientDescent(trainingData, 20, 10, 3.0, testData);
+		}
+		frame.setVisible(true);
 		int last_mouse_x = mouse_x;
 		int last_mouse_y = mouse_y;
 		while (true) {
@@ -160,6 +162,7 @@ public class HandwritingRecognition {
 			last_mouse_y = mouse_y;
 		}
 	}
+	
 
 	private static void showDataImage(double[][][] data, int imageNumber) {
 		for (int i=0;i<28;i++) {
@@ -169,6 +172,7 @@ public class HandwritingRecognition {
 		}
 		frame.repaint();
 	}
+	
 
 	private static void resetImage() {
 		image = new int[28][];
@@ -177,6 +181,7 @@ public class HandwritingRecognition {
 			Arrays.fill(image[i], 255);
 		}
 	}
+	
 
 	private static void setMousePos() {
 		Point pos = frame.getMousePosition();
@@ -185,6 +190,7 @@ public class HandwritingRecognition {
 			mouse_y = (int)pos.getY();
 		}
 	}
+	
 
 	private static void paintImage() {
 		int pixel_x = (int)(mouse_x-IMAGE_X)/PIXEL_SIZE;
