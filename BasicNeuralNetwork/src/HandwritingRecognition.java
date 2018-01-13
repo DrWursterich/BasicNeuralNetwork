@@ -8,6 +8,12 @@ import javax.swing.*;
 
 @SuppressWarnings("unused")
 public class HandwritingRecognition {
+	private static final int PIXEL_COUNT = 28;
+	private static final int PIXEL_SIZE = 5;
+	private static final int IMAGE_X = 12;
+	private static final int IMAGE_Y = 35;
+	private static final int BORDER_SIZE = 1;
+	private static final int BRUSH_RADIUS = 1;
 	private static JFrame frame;
 	private static JButton submit;
 	private static JButton reset;
@@ -15,16 +21,12 @@ public class HandwritingRecognition {
 	private static boolean pressed = false;
 	private static int mouse_x = 0;
 	private static int mouse_y = 0;
-	private static int[][] image;
-	private static final int PIXEL_COUNT = 28;
-	private static final int PIXEL_SIZE = 5;
-	private static final int IMAGE_X = 12;
-	private static final int IMAGE_Y = 35;
-	private static final int BORDER_SIZE = 1;
-	private static final int BRUSH_RADIUS = 1;
+	private static int[][] image = new int[28][];
 	private static AdvancedNet nn;
 
 	public HandwritingRecognition() {
+		submit = new JButton("Submit");
+		reset = new JButton("Reset");
 		frame = new JFrame() {
 			private static final long serialVersionUID = 1L;
 			@Override
@@ -43,45 +45,6 @@ public class HandwritingRecognition {
 				}
 			}
 		};
-		Container panel = frame.getContentPane();
-		panel.setLayout(new FlowLayout());
-		panel.setSize(new Dimension(800, 500));
-		frame.setLayout(new BorderLayout());
-		frame.setTitle("Handwriting Recognition");
-		frame.setSize(400, 250);
-		frame.setResizable(false);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setLocationRelativeTo(null);
-		frame.addMouseListener(new MouseListener() {
-			@Override
-			public void mousePressed(MouseEvent evt) {
-				if (mouse_x >= IMAGE_X && mouse_x <= IMAGE_X+PIXEL_COUNT*PIXEL_SIZE
-						&& mouse_y >= IMAGE_Y && mouse_y <= IMAGE_Y+PIXEL_COUNT*PIXEL_SIZE) {
-					paintImage();
-					pressed = true;
-				}
-			}
-			@Override
-			public void mouseReleased(MouseEvent evt) {
-				pressed = false;
-			}
-			@Override
-			public void mouseClicked(MouseEvent evt) {
-			}
-			@Override
-			public void mouseEntered(MouseEvent evt) {
-			}
-			@Override
-			public void mouseExited(MouseEvent evt) {
-			}
-		});
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-			System.out.println(e.getMessage());
-		}
-
-		submit = new JButton("Submit");
 		submit.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent event) {
@@ -120,9 +83,6 @@ public class HandwritingRecognition {
 				System.out.println();
 			}
 		});
-		panel.add(submit, BorderLayout.EAST);
-
-		reset = new JButton("Reset");
 		reset.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent event) {
@@ -130,28 +90,62 @@ public class HandwritingRecognition {
 				frame.repaint();
 			}
 		});
+		frame.addMouseListener(new MouseListener() {
+			@Override
+			public void mousePressed(MouseEvent evt) {
+				if (mouse_x >= IMAGE_X && mouse_x <= IMAGE_X+PIXEL_COUNT*PIXEL_SIZE
+						&& mouse_y >= IMAGE_Y && mouse_y <= IMAGE_Y+PIXEL_COUNT*PIXEL_SIZE) {
+					paintImage();
+					pressed = true;
+				}
+			}
+			@Override
+			public void mouseReleased(MouseEvent evt) {
+				pressed = false;
+			}
+			@Override
+			public void mouseClicked(MouseEvent evt) {
+			}
+			@Override
+			public void mouseEntered(MouseEvent evt) {
+			}
+			@Override
+			public void mouseExited(MouseEvent evt) {
+			}
+		});
+		frame.setLayout(new BorderLayout());
+		frame.setTitle("Handwriting Recognition");
+		frame.setSize(400, 250);
+		frame.setResizable(false);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setLocationRelativeTo(null);
+		Container panel = frame.getContentPane();
+		panel.setLayout(new FlowLayout());
+		panel.setSize(new Dimension(800, 500));
+		panel.add(submit, BorderLayout.EAST);
 		panel.add(reset, BorderLayout.SOUTH);
-
-		resetImage();
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+			System.out.println(e.getMessage());
+		}
+		frame.setVisible(true);
 	}
 	
 
 	public static void main(String[] args) {
-		new HandwritingRecognition();
 		double[][][] trainingData = mnistLoader.loadArrayZip("mnistData.zip", "TrainingData.ini");
 		double[][][] testData = mnistLoader.loadArrayZip("mnistData.zip", "TestData.ini");
-		nn = new AdvancedNet(new int[]{784, 50, 10});
-		if (trainingData == null && testData == null) {
+		if (trainingData == null || testData == null) {
 			System.exit(0);
 		}
+		nn = new AdvancedNet(new int[]{784, 50, 10});
 		nn.stochasticGradientDescent(trainingData, 20, 10, 3.0, testData);
-		frame.setVisible(true);
+		resetImage();
+		new HandwritingRecognition();
 		int last_mouse_x = mouse_x;
 		int last_mouse_y = mouse_y;
 		while (true) {
-//			if (System.nanoTime()%4000000000.0 <= 1000000) {
-//				showDataImage(trainingData, (int)(Math.random()*(trainingData.length-1)));
-//			}
 			setMousePos();
 			if (pressed && (mouse_x != last_mouse_x || mouse_y != last_mouse_y)) {
 				if (mouse_x >= IMAGE_X && mouse_x <= IMAGE_X+PIXEL_COUNT*PIXEL_SIZE
@@ -176,7 +170,6 @@ public class HandwritingRecognition {
 	
 
 	private static void resetImage() {
-		image = new int[28][];
 		for (int i=27;i>=0;i--) {
 			image[i] = new int[28];
 			Arrays.fill(image[i], 255);
