@@ -332,13 +332,13 @@ public class mnistLoader {
 
 	/***
 	 * unpacks a .zip file
-	 * @param fileName the .zip-file name
+	 * @param zipName the .zip-file name
 	 */
-	public static void unzip(String fileName) {
+	public static void unzip(String zipName) {
 		double startTime = System.nanoTime();
 		byte[] buffer = new byte[1024];
 		try {
-			ZipInputStream s = new ZipInputStream(new FileInputStream(path + fileName));
+			ZipInputStream s = new ZipInputStream(new FileInputStream(path + zipName));
 			ZipEntry ze = s.getNextEntry();
 			while (ze != null) {
 				File newFile = new File(path + ze.getName());
@@ -375,13 +375,13 @@ public class mnistLoader {
 			ZipInputStream s = new ZipInputStream(new FileInputStream(path + zipName));
 			ZipEntry ze = s.getNextEntry();
 			while (ze != null) {
-				File newFile = new File(path + ze.getName());
 				if (ze.getName().equals(fileName)) {
 					InputStream f = zipFile.getInputStream(ze);
 					ObjectInputStream is = new ObjectInputStream(f);
 					ret = (double[][][]) is.readObject();
 					is.close();
 					f.close();
+					break;
 				}
 				ze = s.getNextEntry();
 			}

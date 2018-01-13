@@ -1,12 +1,14 @@
 import BNN.*;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-@SuppressWarnings("unused")
+/***
+ * A demonstration program that recognizes handwritten digits using the BNN package
+ * @author Mario Schaeper
+ */
 public class HandwritingRecognition {
 	private static final int PIXEL_COUNT = 28;
 	private static final int PIXEL_SIZE = 5;
@@ -14,6 +16,7 @@ public class HandwritingRecognition {
 	private static final int IMAGE_Y = 35;
 	private static final int BORDER_SIZE = 1;
 	private static final int BRUSH_RADIUS = 1;
+	private static final int INTENSITY = 192;
 	private static JFrame frame;
 	private static JButton submit;
 	private static JButton reset;
@@ -24,7 +27,10 @@ public class HandwritingRecognition {
 	private static int[][] image = new int[28][];
 	private static AdvancedNet nn;
 
-	public HandwritingRecognition() {
+	/***
+	 * Initializes the JFrame
+	 */
+	private HandwritingRecognition() {
 		submit = new JButton("Submit");
 		reset = new JButton("Reset");
 		frame = new JFrame() {
@@ -120,13 +126,14 @@ public class HandwritingRecognition {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLocationRelativeTo(null);
 		Container panel = frame.getContentPane();
-		panel.setLayout(new FlowLayout());
+		panel.setLayout(new BorderLayout());
 		panel.setSize(new Dimension(800, 500));
 		panel.add(submit, BorderLayout.EAST);
 		panel.add(reset, BorderLayout.SOUTH);
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+		} catch (ClassNotFoundException | InstantiationException 
+				| IllegalAccessException | UnsupportedLookAndFeelException e) {
 			System.out.println(e.getMessage());
 		}
 		frame.setVisible(true);
@@ -158,7 +165,12 @@ public class HandwritingRecognition {
 		}
 	}
 	
-
+	/***
+	 * displays a training data input image in the input part of the JFrame
+	 * @param data the training data
+	 * @param imageNumber the index of the training data to show
+	 */
+	@SuppressWarnings("unused")
 	private static void showDataImage(double[][][] data, int imageNumber) {
 		for (int i=0;i<28;i++) {
 			for (int j=0;j<28;j++) {
@@ -167,7 +179,10 @@ public class HandwritingRecognition {
 		}
 		frame.repaint();
 	}
-	
+
+	/***
+	 * resets the image to white
+	 */
 
 	private static void resetImage() {
 		for (int i=27;i>=0;i--) {
@@ -175,7 +190,10 @@ public class HandwritingRecognition {
 			Arrays.fill(image[i], 255);
 		}
 	}
-	
+
+	/***
+	 * updates the static varibles to the mouse position
+	 */
 
 	private static void setMousePos() {
 		Point pos = frame.getMousePosition();
@@ -184,7 +202,11 @@ public class HandwritingRecognition {
 			mouse_y = (int)pos.getY();
 		}
 	}
-	
+
+	/***
+	 * draws a black overlay over the area around the courser in the image input part.
+	 * size and intensity are defined by <b>BRUSH_RADIUS</b> and <b>INTENSITY</b>
+	 */
 
 	private static void paintImage() {
 		int pixel_x = (int)(mouse_x-IMAGE_X)/PIXEL_SIZE;
@@ -192,7 +214,8 @@ public class HandwritingRecognition {
 		for (int i=pixel_x-BRUSH_RADIUS;i<=pixel_x+BRUSH_RADIUS;i++) {
 			for (int j=pixel_y-BRUSH_RADIUS;j<=pixel_y+BRUSH_RADIUS;j++) {
 				if (i >= 0 && i < PIXEL_COUNT && j >= 0 && j < PIXEL_COUNT) {
-					image[j][i] -= (int)((1-((Math.abs(i-pixel_x)+Math.abs(j-pixel_y))/((double)BRUSH_RADIUS*2.0)))*127);
+					image[j][i] -= (int)((1-((Math.abs(i-pixel_x)+Math.abs(j-pixel_y))
+							/((double)BRUSH_RADIUS*2.0)))*INTENSITY);
 					if (image[j][i]>255) {
 						image[j][i] = 255;
 					}

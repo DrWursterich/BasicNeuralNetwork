@@ -111,8 +111,24 @@ public class NeuralNet {
 		process();
 		return getOutputs();
 	}
+	
+	public void backpropagate2(double learningRate, double momentum, double[] idealOutputs) throws IllegalArgumentException {
+		if (idealOutputs == null) {
+			throw new IllegalArgumentException("Ideal outputs can not be null.");
+		}
+		if (idealOutputs.length != this.nodes[this.nodes.length-1].length ) {
+			throw new IllegalArgumentException("The number of expected outputs has to match the number of output-nodes.");
+		}
+		int outputLayerLength = this.dimensions[this.dimensions.length-1];
+		for (int i=outputLayerLength-1;i>=0;i--) {
+			Connection[] inputs = this.nodes[this.dimensions.length-1][i].getInputs();
+			for (int j=inputs.length-1;j>=0;j--) {
+				//errorfunction = each * tiny * step * forward;
+			}
+		}
+	}
 
-	public void backpropagate(double learningRate, double momentum, double[] idealOutputs) {
+	public void backpropagate(double learningRate, double momentum, double[] idealOutputs) throws IllegalArgumentException {
 		if (idealOutputs == null) {
 			throw new IllegalArgumentException("Ideal outputs can not be null.");
 		}
@@ -137,8 +153,8 @@ public class NeuralNet {
 				double sumErrorOutputs = 0;
 				for (int l=outputLayerLength-1;l>=0;l--) {
 					Node node = this.nodes[this.dimensions.length-1][l];
-					sumErrorOutputs += (-(idealOutputs[l] - node.getContent()) * node.getContent()
-							* (1 - node.getContent()) * this.nodes[i][j].getOutput(l).getWeight()/*works only with one hidden layer*/);
+					sumErrorOutputs += (-(idealOutputs[l] - node.getContent()) * Functions.sigmoidDer(node.getContent())
+							* this.nodes[i][j].getOutput(l).getWeight()/*works only with one hidden layer*/);
 				}
 				for (int k=inputs.length-1;k>=0;k--) {
 					inputs[k].calculateDeltaWeight(learningRate, sumErrorOutputs);
