@@ -141,9 +141,10 @@ public class HandwritingRecognition {
 		double[][][] trainingData = mnistLoader.loadArrayZip("mnistData.zip", "TrainingData.ini");
 		double[][][] testData = mnistLoader.loadArrayZip("mnistData.zip", "TestData.ini");
 		nn = new AdvancedNet(new int[]{784, 50, 10});
-		if (trainingData != null && testData != null) { 
-			nn.stochasticGradientDescent(trainingData, 20, 10, 3.0, testData);
+		if (trainingData == null && testData == null) {
+			System.exit(0);
 		}
+		nn.stochasticGradientDescent(trainingData, 20, 10, 3.0, testData);
 		frame.setVisible(true);
 		int last_mouse_x = mouse_x;
 		int last_mouse_y = mouse_y;

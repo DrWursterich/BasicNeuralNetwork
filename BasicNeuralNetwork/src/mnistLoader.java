@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
@@ -12,6 +13,7 @@ import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /***
  * class to load mnist data from specific files
@@ -369,13 +371,13 @@ public class mnistLoader {
 		double[][][] ret = null;
 		double startTime = System.nanoTime();
 		try {
+			ZipFile zipFile = new ZipFile(path + zipName);
 			ZipInputStream s = new ZipInputStream(new FileInputStream(path + zipName));
 			ZipEntry ze = s.getNextEntry();
 			while (ze != null) {
 				File newFile = new File(path + ze.getName());
-				if (newFile.getName().equals(fileName)) {
-					System.out.println("found " + newFile.getAbsoluteFile());
-					FileInputStream f = new FileInputStream(path + fileName);
+				if (ze.getName().equals(fileName)) {
+					InputStream f = zipFile.getInputStream(ze);
 					ObjectInputStream is = new ObjectInputStream(f);
 					ret = (double[][][]) is.readObject();
 					is.close();
@@ -383,12 +385,13 @@ public class mnistLoader {
 				}
 				ze = s.getNextEntry();
 			}
+			zipFile.close();
 			s.closeEntry();
 			s.close();
 			if (ret == null) {
 				System.out.println("file not found");
 			} else {
-				System.out.println(String.format("loading finished in %4.8f seconds", (System.nanoTime()-startTime)/1000000000));
+				System.out.println(String.format("loading %s finished in %4.8f seconds", fileName, (System.nanoTime()-startTime)/1000000000));
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			System.out.println("loading failed");
