@@ -76,9 +76,6 @@ public class HandwritingRecognition {
 						}
 					}
 				}
-//				for (int i=0;i<output.length;i++) {
-//					System.out.println(String.format("%2d: %1.8f", (int)ranking[i][0], ranking[i][1]));
-//				}
 				String[] conclusions = {"this is unlikely a ", "it might be a ", "i guess this is a ", "this is probably a ", "this is a "};
 				System.out.println(conclusions[(int)Math.ceil(ranking[0][1]*5)-1] + (int)ranking[0][0]);
 				for (int i=1;i<ranking.length;i++) {
@@ -132,13 +129,12 @@ public class HandwritingRecognition {
 		panel.add(reset, BorderLayout.SOUTH);
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException 
+		} catch (ClassNotFoundException | InstantiationException
 				| IllegalAccessException | UnsupportedLookAndFeelException e) {
 			System.out.println(e.getMessage());
 		}
 		frame.setVisible(true);
 	}
-	
 
 	public static void main(String[] args) {
 		double[][][] trainingData = mnistLoader.loadArrayZip("mnistData.zip", "TrainingData.ini");
@@ -147,7 +143,8 @@ public class HandwritingRecognition {
 			System.exit(0);
 		}
 		nn = new AdvancedNet(new int[]{784, 50, 10});
-		nn.stochasticGradientDescent(trainingData, 20, 10, 3.0, testData);
+		nn.setMonitoring(false, false, true, true);
+		nn.stochasticGradientDescent(trainingData, 20, 10, 3.0, 0.1, testData);
 		resetImage();
 		new HandwritingRecognition();
 		int last_mouse_x = mouse_x;
@@ -164,7 +161,7 @@ public class HandwritingRecognition {
 			last_mouse_y = mouse_y;
 		}
 	}
-	
+
 	/***
 	 * displays a training data input image in the input part of the JFrame
 	 * @param data the training data
@@ -183,7 +180,6 @@ public class HandwritingRecognition {
 	/***
 	 * resets the image to white
 	 */
-
 	private static void resetImage() {
 		for (int i=27;i>=0;i--) {
 			image[i] = new int[28];
@@ -194,7 +190,6 @@ public class HandwritingRecognition {
 	/***
 	 * updates the static varibles to the mouse position
 	 */
-
 	private static void setMousePos() {
 		Point pos = frame.getMousePosition();
 		if (pos != null) {
@@ -207,7 +202,6 @@ public class HandwritingRecognition {
 	 * draws a black overlay over the area around the courser in the image input part.
 	 * size and intensity are defined by <b>BRUSH_RADIUS</b> and <b>INTENSITY</b>
 	 */
-
 	private static void paintImage() {
 		int pixel_x = (int)(mouse_x-IMAGE_X)/PIXEL_SIZE;
 		int pixel_y = (int)(mouse_y-IMAGE_Y)/PIXEL_SIZE;

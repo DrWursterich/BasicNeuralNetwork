@@ -111,7 +111,7 @@ public class NeuralNet {
 		process();
 		return getOutputs();
 	}
-	
+
 	public void backpropagate2(double learningRate, double momentum, double[] idealOutputs) throws IllegalArgumentException {
 		if (idealOutputs == null) {
 			throw new IllegalArgumentException("Ideal outputs can not be null.");
@@ -153,8 +153,8 @@ public class NeuralNet {
 				double sumErrorOutputs = 0;
 				for (int l=outputLayerLength-1;l>=0;l--) {
 					Node node = this.nodes[this.dimensions.length-1][l];
-					sumErrorOutputs += (-(idealOutputs[l] - node.getContent()) * Functions.sigmoidDer(node.getContent())
-							* this.nodes[i][j].getOutput(l).getWeight()/*works only with one hidden layer*/);
+//					sumErrorOutputs += (-(idealOutputs[l] - node.getContent()) * Functions.sigmoidDer(node.getContent())
+//							* this.nodes[i][j].getOutput(l).getWeight()/*works only with one hidden layer*/);
 				}
 				for (int k=inputs.length-1;k>=0;k--) {
 					inputs[k].calculateDeltaWeight(learningRate, sumErrorOutputs);
@@ -219,7 +219,7 @@ public class NeuralNet {
 			System.out.println();
 		}
 	}
-	
+
 	public void test(TrainingData[] td, boolean absolute) {
 		double error = 0;
 		for (int i=0;i<td.length;i++) {
@@ -235,7 +235,7 @@ public class NeuralNet {
 					+ " Error: " + StringFormat.dec(errorTd, (""+(outputs.length-1)).length(), 4, false, ' '));
 			error += errorTd;
 		}
-		System.out.println("===============================\nError Average: " 
+		System.out.println("===============================\nError Average: "
 					+ StringFormat.dec(error/(td.length), 1, 4, false, ' '));
 	}
 
