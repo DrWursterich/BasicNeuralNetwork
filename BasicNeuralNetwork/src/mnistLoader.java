@@ -23,8 +23,9 @@ import java.util.zip.ZipFile;
 public class mnistLoader {
 	private static String path = "mnistData\\";
 
-	/***
+	/**
 	 * Loads training data from <b>trainingData.txt</b> and <b>trainingDataResults.txt</b>
+	 *
 	 * @return fileName combined array of inputs and outputs of the loaded training data
 	 */
 	public static double[][][] loadTrainingDataTxt() {
@@ -39,8 +40,9 @@ public class mnistLoader {
 		return trainingData;
 	}
 
-	/***
+	/**
 	 * Loads training data outputs from a file and formats it to fit a neural net output
+	 *
 	 * @param fileName the file to load from
 	 * @return formatted array of the loaded outputs
 	 */
@@ -58,8 +60,9 @@ public class mnistLoader {
 		return trainingOutputs;
 	}
 
-	/***
+	/**
 	 * Loads training data inputs from a file
+	 *
 	 * @param fileName the file to load from
 	 * @return array of the loaded outputs
 	 */
@@ -137,8 +140,9 @@ public class mnistLoader {
 		return ret;
 	}
 
-	/***
+	/**
 	 * Loads training data outputs from a file
+	 *
 	 * @param fileName the file to load from
 	 * @return array fo the loaded outputs
 	 */
@@ -166,8 +170,9 @@ public class mnistLoader {
 		return ret;
 	}
 
-	/***
+	/**
 	 * Saves a three dimensional array into a binaryfile
+	 *
 	 * @param data the array to save
 	 * @param fileName the name of the file
 	 * @param overwrite whether the file should be overwritten, if it exists or not
@@ -216,8 +221,9 @@ public class mnistLoader {
 		}
 	}
 
-	/***
+	/**
 	 * Loads a three dimensional array from a binaryfile
+	 *
 	 * @param fileName the name of the file to load from
 	 * @return a array of the loaded data
 	 */
@@ -250,8 +256,9 @@ public class mnistLoader {
 		return ret;
 	}
 
-	/***
+	/**
 	 * Loads a three dimensional array from a binaryfile
+	 *
 	 * @param fileName the name of the file to load from
 	 * @return a array of the loaded data
 	 */
@@ -289,8 +296,9 @@ public class mnistLoader {
 		return ret;
 	}
 
-	/***
+	/**
 	 * Saves an array to a file
+	 *
 	 * @param fileName the file name
 	 */
 	public static void saveArray(double[][][] a, String fileName) {
@@ -308,8 +316,9 @@ public class mnistLoader {
 		}
 	}
 
-	/***
+	/**
 	 * Loads an array from a file
+	 *
 	 * @param fileName the file name
 	 * @return the loaded array
 	 */
@@ -330,8 +339,9 @@ public class mnistLoader {
 		return ret;
 	}
 
-	/***
+	/**
 	 * unpacks a .zip file
+	 *
 	 * @param zipName the .zip-file name
 	 */
 	public static void unzip(String zipName) {
@@ -362,8 +372,9 @@ public class mnistLoader {
 		}
 	}
 
-	/***
+	/**
 	 * loads an array from a file inside a .zip file
+	 *
 	 * @param zipName the name of the .zip-file
 	 * @param fileName the name of the file to load from
 	 */
