@@ -15,23 +15,23 @@ import java.util.Arrays;
  * @author Mario Schaeper
  */
 public class NeuralNet {
-	private static final int INPUT = 0;
-	private static final int OUTPUT = 1;
-	private int layers;
-	private int[] sizes;
-	private double[][] biases;
-	private double[][][] weights;
-	private boolean monitorTrainingCost = false;
-	private boolean monitorTrainingAccuracy = false;
-	private boolean monitorEvaluationCost = false;
-	private boolean monitorEvaluationAccuracy = true;
+	protected static final int INPUT = 0;
+	protected static final int OUTPUT = 1;
+	protected final int[] sizes;
+	protected final Layer[] layers;
+	protected double[][] biases;
+	protected double[][][] weights;
+	protected boolean monitorTrainingCost = false;
+	protected boolean monitorTrainingAccuracy = false;
+	protected boolean monitorEvaluationCost = false;
+	protected boolean monitorEvaluationAccuracy = true;
 
 	/***
 	 * Abstract class for costfunction classes to inherit from.
 	 *
 	 * @author Mario Schaeper
 	 */
-	private abstract class CostFunction {
+	protected abstract class CostFunction {
 		public abstract double[] delta(double[] outputActivations, double[] idealOutput, double[] z);
 		public abstract double fn(double[] outputActivations, double[] idealOutput);
 	}
@@ -44,18 +44,12 @@ public class NeuralNet {
 	 */
 	public final class Quadratic extends CostFunction {
 		public double[] delta(double[] outputActivations, double[] idealOutput, double[] z) {
-			Arrays.fill(new byte[3], (byte)3);
-			double[] ret = new double[outputActivations.length];
-			for (int i=outputActivations.length-1;i>=0;i--) {
-				ret[i] = outputActivations[i] - idealOutput[i];
-			}
 			return VecMath.multiply(VecMath.subtract(outputActivations, idealOutput), VecMath.sigmoidPrime(z));
 		}
 		public double fn(double[] outputActivations, double[] idealOutput) {
 			return 0.5*VecMath.norm(VecMath.subtract(outputActivations, idealOutput));
 		}
 	}
-
 
 	/***
 	 * Cross-entropy costfunction class. <br>
@@ -75,6 +69,28 @@ public class NeuralNet {
 		}
 	}
 
+	protected abstract class Layer {
+		public abstract double[] feedForward(double[] input);
+		public abstract void backpropagate();
+	}
+
+	protected final class FullyConnected extends Layer {
+		public double[] feedForward(double[] input) {
+			if (input.length != sizes[0]) {
+				throw new IllegalArgumentException("Input length does not match the amount of input-neurons");
+			}
+			double[] ret = new double[input.length];
+			System.arraycopy(input, 0, ret, 0, input.length);
+			for (int i=0;i<sizes.length-1;i++) {
+				ret = VecMath.sigmoid(VecMath.add(VecMath.dot(weights[i], ret), biases[i]));
+			}
+			return ret;
+		}
+		public void backpropagate() {
+
+		}
+	}
+
 	/**
 	 * Creates a Neural Net with the given sizes. Biases have to match the values
 	 * in the size array without the input nodes and weights are the matrices between the layers.<br>
@@ -85,16 +101,38 @@ public class NeuralNet {
 	 * @param weights Pre set weights
 	 */
 	public NeuralNet(int[] size, double[][] biases, double[][][] weights) {
+		if (size.length < 1) {
+			throw new IllegalArgumentException("No size values given");
+		}
+		if (Arrays.stream(size).anyMatch(i -> i<=0)) {
+			throw new IllegalArgumentException("Size values have to be positive");
+		}
+		if (size.length != biases.length) {
+			throw new IllegalArgumentException("Bias length does not match size length");
+		}
+		if (size.length != weights.length) {
+			throw new IllegalArgumentException("Weight length does not match size length");
+		}
 		this.sizes = new int[size.length];
 		System.arraycopy(size, 0, this.sizes, 0, size.length);
-		this.layers = this.sizes.length;
-		this.biases = new double[this.layers-1][];
-		this.weights = new double[this.layers-1][][];
-		for (int i=this.layers-1;i>0;i--) {
+		this.layers = new Layer[this.sizes.length-1];
+		this.biases = new double[this.sizes.length-1][];
+		this.weights = new double[this.sizes.length-1][][];
+		for (int i=this.sizes.length-1;i>0;i--) {
+			if (size[i-1] != biases[i-1].length) {
+				throw new IllegalArgumentException("Biases lenght does not match sizes in layer " + (i-1));
+			}
+			if (size[i-1] != weights[i-1].length) {
+				throw new IllegalArgumentException("Weights length does not match sizes in layer " + (i-1));
+			}
+			this.layers[i-1] = new FullyConnected();
 			this.biases[i-1] = new double[biases[i-1].length];
 			System.arraycopy(biases[i-1], 0, this.biases[i-1], 0, biases[i-1].length);
 			this.weights[i-1] = new double[this.sizes[i]][];
 			for (int j=this.sizes[i]-1;j>=0;j--) {
+				if (size[i-1] != weights[i][j].length) {
+					throw new IllegalArgumentException("Weights length does not match sizes in layer " + i + " for neuron " + j);
+				}
 				this.weights[i-1][j] = new double[weights[i-1][j].length];
 				System.arraycopy(weights[i-1][j], 0, this.weights[i-1][j], 0, weights[i-1][j].length);
 			}
@@ -108,12 +146,17 @@ public class NeuralNet {
 	 * @param size Array of sizes for each layer
 	 */
 	public NeuralNet(int...size) {
+		if (size.length < 1) {
+			throw new IllegalArgumentException("No size values given");
+		}
+		if (Arrays.stream(size).anyMatch(i -> i<=0)) {
+			throw new IllegalArgumentException("Size values have to be positive");
+		}
 		this.sizes = new int[size.length];
 		System.arraycopy(size, 0, this.sizes, 0, size.length);
-		this.layers = this.sizes.length;
-		this.biases = new double[this.layers-1][];
-		this.weights = new double[this.layers-1][][];
-		for (int i=this.layers-1;i>0;i--) {
+		this.biases = new double[this.sizes.length-1][];
+		this.weights = new double[this.sizes.length-1][][];
+		for (int i=this.sizes.length-1;i>0;i--) {
 			this.biases[i-1] = new double[this.sizes[i]];
 			this.weights[i-1] = new double[this.sizes[i]][];
 			for (int j=this.sizes[i]-1;j>=0;j--) {
@@ -124,6 +167,85 @@ public class NeuralNet {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Returns the amount of layers, including input and output.
+	 *
+	 * @return amount of layers
+	 */
+	public int getLayerAmount() {
+		return this.sizes.length;
+	}
+
+	/**
+	 * Returns the amount of neurons in the given layer.
+	 *
+	 * @param layer the layer
+	 * @return amount of neurons
+	 */
+	public int getNeuronAmountInLayer(int layer) {
+		if (layer < 0 || layer >= this.sizes.length) {
+			throw new IllegalArgumentException("Layer " + layer + " does not exist");
+		}
+		return this.sizes[layer];
+	}
+
+	/**
+	 * Returns the amount of neurons in the input layer.
+	 *
+	 * @return input neurons
+	 */
+	public int getInputNeuronAmount() {
+		return this.sizes[0];
+	}
+
+	/**
+	 * Returns the amount of neurons in the output layer.
+	 *
+	 * @return output neurons
+	 */
+	public int getOutputNeuronAmount() {
+		return this.sizes[this.sizes.length-1];
+	}
+
+	/**
+	 * Returns a bias of a specific neuron.
+	 *
+	 * @param layer the layer of the neuron
+	 * @param neuron the neuron in the layer
+	 * @return the bias of the described neuron
+	 */
+	public double getBias(int layer, int neuron) {
+		if (layer < 0 || layer >= this.sizes.length) {
+			throw new IllegalArgumentException("Layer " + layer + " does not exist");
+		}
+		if (neuron < 0 || neuron >= this.sizes[layer]) {
+			throw new IllegalArgumentException("Neuron " + neuron + " does not exist in layer " + layer);
+		}
+		return this.biases[layer][neuron];
+	}
+
+	/**
+	 * Returns a weight of a connection between two neurons.
+	 * The Layer has to be the one, in which the receiving neuron is.
+	 *
+	 * @param layer the layer of the neuron the connection is to
+	 * @param neuron the neuron in the layer
+	 * @param neuronFrom the neuron of the previous layer, where the connection comes from
+	 * @return the weight of the described connection
+	 */
+	public double getWeight(int layer, int neuron, int neuronFrom) {
+		if (layer <= 0 || layer >= this.sizes.length) {
+			throw new IllegalArgumentException("Layer " + layer + " does not exist or has no connections to previous neurons");
+		}
+		if (neuron < 0 || neuron >= this.sizes[layer]) {
+			throw new IllegalArgumentException("Neuron " + neuron + " does not exist in layer " + layer);
+		}
+		if (neuronFrom < 0 || neuron >= this.sizes[layer-1]) {
+			throw new IllegalArgumentException("Neuron " + neuronFrom + " does not exist in layer " + (layer-1));
+		}
+		return this.weights[layer][neuron][neuronFrom];
 	}
 
 	/**
@@ -149,12 +271,62 @@ public class NeuralNet {
 	 * @return array of the network outputs
 	 */
 	public double[] feedForward(double[] input) {
+		if (input.length != this.sizes[0]) {
+			throw new IllegalArgumentException("Input length does not match the amount of input-neurons");
+		}
 		double[] ret = new double[input.length];
 		System.arraycopy(input, 0, ret, 0, input.length);
-		for (int i=0;i<this.layers-1;i++) {
+		for (int i=0;i<this.sizes.length-1;i++) {
 			ret = VecMath.sigmoid(VecMath.add(VecMath.dot(this.weights[i], ret), this.biases[i]));
 		}
 		return ret;
+	}
+
+	protected void stochasticGradientDescentCheckArguments(double[][][] trainingData, int epochs, int miniBatchSize,
+			double learningRate, double regularization, CostFunction costFunction,
+			double[][][] testData) throws IllegalArgumentException {
+		stochasticGradientDescentCheckArguments(trainingData, epochs, miniBatchSize, learningRate, regularization, costFunction);
+		if (testData.length <= 0) {
+			throw new IllegalArgumentException("TestData can not be empty");
+		}
+		for (int i=testData.length-1;i>=0;i--) {
+			if (testData[i].length != 2) {
+				throw new IllegalArgumentException("Wrong structure for testData");
+			}
+			if (testData[i][INPUT].length != this.sizes[0]) {
+				throw new IllegalArgumentException("Input size does not match amount of input-neurons in testData set " + i);
+			}
+			if (testData[i][OUTPUT].length != this.sizes[this.sizes.length-1]) {
+				throw new IllegalArgumentException("Output size does not match amount of output-neurons in testData set " + i);
+			}
+		}
+	}
+
+	protected void stochasticGradientDescentCheckArguments(double[][][] trainingData, int epochs, int miniBatchSize,
+			double learningRate, double regularization, CostFunction costFunction) throws IllegalArgumentException {
+		if (epochs <= 0) {
+			throw new IllegalArgumentException("Epochs has to be positive");
+		}
+		if (miniBatchSize <= 0) {
+			throw new IllegalArgumentException("MiniBatchSize has to be positive");
+		}
+		if (costFunction == null) {
+			throw new IllegalArgumentException("CostFunction can not be null");
+		}
+		if (trainingData.length <= 0) {
+			throw new IllegalArgumentException("TrainingData can not be empty");
+		}
+		for (int i=trainingData.length-1;i>=0;i--) {
+			if (trainingData[i].length != 2) {
+				throw new IllegalArgumentException("Wrong structure for trainingData");
+			}
+			if (trainingData[i][INPUT].length != this.sizes[0]) {
+				throw new IllegalArgumentException("Input size does not match amount of input-neurons in trainingData set " + i);
+			}
+			if (trainingData[i][OUTPUT].length != this.sizes[this.sizes.length-1]) {
+				throw new IllegalArgumentException("Output size does not match amount of output-neurons in trainingData set " + i);
+			}
+		}
 	}
 
 	/**
@@ -180,6 +352,7 @@ public class NeuralNet {
 	 */
 	public void stochasticGradientDescent(double[][][] trainingData, int epochs, int miniBatchSize,
 			double learningRate, double regularization, CostFunction costFunction, double[][][] testData) {
+		stochasticGradientDescentCheckArguments(trainingData, epochs, miniBatchSize, learningRate, regularization, costFunction, testData);
 		double startTime = System.nanoTime();
 		double[] trainingCost = new double[epochs];
 		int[] trainingAccuracy = new int[epochs];
@@ -229,6 +402,16 @@ public class NeuralNet {
 	 */
 	public void stochasticGradientDescent(double[][][] trainingData, int epochs, int miniBatchSize,
 			double learningRate, double regularization, CostFunction costFunction) {
+		stochasticGradientDescentCheckArguments(trainingData, epochs, miniBatchSize, learningRate, regularization, costFunction);
+		if (epochs <= 0) {
+			throw new IllegalArgumentException("Epochs has to be positive");
+		}
+		if (miniBatchSize <= 0) {
+			throw new IllegalArgumentException("MiniBatchSize has to be positive");
+		}
+		if (costFunction == null) {
+			throw new IllegalArgumentException("CostFunction can not be null");
+		}
 		double startTime = System.nanoTime();
 		double[] trainingCost = new double[epochs];
 		int[] trainingAccuracy = new int[epochs];
@@ -295,7 +478,7 @@ public class NeuralNet {
 		this.stochasticGradientDescent(trainingData, epochs, miniBatchSize, learningRate, regularization, new CrossEntropy());
 	}
 
-	private void stochasticGradientDescentInner(double[][][] trainingData, int miniBatchSize,
+	protected void stochasticGradientDescentInner(double[][][] trainingData, int miniBatchSize,
 			double learningRate, double regularization, CostFunction costFunction) {
 		double[][][] newData = new double[trainingData.length][][];
 		for (int j=trainingData.length-1;j>=0;j--) {
@@ -317,7 +500,7 @@ public class NeuralNet {
 		}
 	}
 
-	private void updateMiniBatch(double[][][] miniBatch, double learningRate,
+	protected void updateMiniBatch(double[][][] miniBatch, double learningRate,
 			double regularization, double trainingDataLength, CostFunction costFunction) {
 		double[][] nablaBiases = new double[this.biases.length][];
 		double[][][] nablaWeights = new double[this.weights.length][][];
@@ -341,16 +524,16 @@ public class NeuralNet {
 		}
 	}
 
-	private double[][][][] backpropagate(double[][] touple, CostFunction costFunction) {
+	protected double[][][][] backpropagate(double[][] touple, CostFunction costFunction) {
 		double[][] nablaBiases = new double[this.biases.length][];
 		double[][][] nablaWeights = new double[this.weights.length][][];
-		double[][] zVecs = new double[this.layers-1][];
-		double[][] activations = new double[this.layers][];
+		double[][] zVecs = new double[this.sizes.length-1][];
+		double[][] activations = new double[this.sizes.length][];
 		double[] activation = touple[INPUT];
 		double[] delta;
 		double[] z;
 		activations[0] = activation;
-		for (int i=1;i<this.layers;i++) {
+		for (int i=1;i<this.sizes.length;i++) {
 			z = VecMath.add(VecMath.dot(this.weights[i-1], activation), this.biases[i-1]);
 			zVecs[i-1] = z;
 			activation = VecMath.sigmoid(z);
@@ -359,7 +542,7 @@ public class NeuralNet {
 		delta = costFunction.delta(activations[activations.length-1], touple[OUTPUT], zVecs[zVecs.length-1]);
 		nablaBiases[nablaBiases.length-1] = delta;
 		nablaWeights[nablaWeights.length-1] = VecMath.dot(delta, activations[activations.length-2]);
-		for (int i=this.layers-3;i>=0;i--) {
+		for (int i=this.sizes.length-3;i>=0;i--) {
 			z = zVecs[i];
 			delta = VecMath.multiply(VecMath.dot(VecMath.transpose(this.weights[i+1]), delta), VecMath.sigmoidPrime(z));
 			nablaBiases[i] = delta;
@@ -372,7 +555,7 @@ public class NeuralNet {
 		return ret;
 	}
 
-	private double totalCost(double[][][] data, double regularization, CostFunction costFunction) {
+	protected double totalCost(double[][][] data, double regularization, CostFunction costFunction) {
 		double cost = 0;
 		for (int i=data.length-1;i>=0;i--) {
 			cost += costFunction.fn(this.feedForward(data[i][INPUT]), data[i][OUTPUT])/data.length;
@@ -384,7 +567,7 @@ public class NeuralNet {
 		return cost+0.5*(regularization/data.length)*normSum;
 	}
 
-	private int accuracy(double[][][] data) {
+	protected int accuracy(double[][][] data) {
 		double[][] results = new double [data.length][];
 		int sum = 0;
 		for (int i=data.length-1;i>=0;i--) {
@@ -408,6 +591,9 @@ public class NeuralNet {
 	 * @throws IOException if the file exists and is locked or an I/O error occours
 	 */
 	public void saveToFile(String file, boolean overwrite) throws IOException {
+		if (file == null) {
+			throw new IllegalArgumentException("File can not be null");
+		}
 		RandomAccessFile stream = new RandomAccessFile(file, "rw");
 		FileChannel channel = stream.getChannel();
 		FileLock lock = null;
@@ -446,6 +632,9 @@ public class NeuralNet {
 	 * @throws IOException if a I/O error occours
 	 */
 	public static NeuralNet loadFromFile(String file) throws IOException {
+		if (file == null) {
+			throw new IllegalArgumentException("File can not be null");
+		}
 		RandomAccessFile stream = new RandomAccessFile(file, "rw");
 		FileChannel channel = stream.getChannel();
 		int[] sizes = new int[(int)stream.readDouble()];
