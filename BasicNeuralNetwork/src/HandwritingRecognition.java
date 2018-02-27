@@ -144,7 +144,7 @@ public class HandwritingRecognition {
 		}
 		nn = new NeuralNet(784, 50, 10);
 		nn.setMonitoring(false, false, true, true);
-		nn.stochasticGradientDescent(trainingData, 30, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
+		nn.stochasticGradientDescent(trainingData, 5, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
 		resetImage();
 		new HandwritingRecognition();
 		int last_mouse_x = mouse_x;

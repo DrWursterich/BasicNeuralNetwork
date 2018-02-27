@@ -17,8 +17,7 @@ import java.util.Arrays;
 public class NeuralNet {
 	protected static final int INPUT = 0;
 	protected static final int OUTPUT = 1;
-	protected final int[] sizes;
-	protected final Layer[] layers;
+	protected int[] sizes;
 	protected double[][] biases;
 	protected double[][][] weights;
 	protected boolean monitorTrainingCost = false;
@@ -31,7 +30,7 @@ public class NeuralNet {
 	 *
 	 * @author Mario Schaeper
 	 */
-	protected abstract class CostFunction {
+	protected interface CostFunction {
 		public abstract double[] delta(double[] outputActivations, double[] idealOutput, double[] z);
 		public abstract double fn(double[] outputActivations, double[] idealOutput);
 	}
@@ -42,7 +41,7 @@ public class NeuralNet {
 	 *
 	 * @author schäper
 	 */
-	public final class Quadratic extends CostFunction {
+	public final class Quadratic implements CostFunction {
 		public double[] delta(double[] outputActivations, double[] idealOutput, double[] z) {
 			return VecMath.multiply(VecMath.subtract(outputActivations, idealOutput), VecMath.sigmoidPrime(z));
 		}
@@ -58,7 +57,7 @@ public class NeuralNet {
 	 *
 	 * @author Mario Schaeper
 	 */
-	public final class CrossEntropy extends CostFunction {
+	public final class CrossEntropy implements CostFunction {
 		public double[] delta(double[] outputActivations, double[] idealOutput, double[] z) {
 			return VecMath.subtract(outputActivations, idealOutput);
 		}
@@ -66,28 +65,6 @@ public class NeuralNet {
 			return VecMath.sum(VecMath.subtract(VecMath.multiply(VecMath.multiply(idealOutput, -1),
 					VecMath.log(outputActivations)), VecMath.multiply(VecMath.add(VecMath.multiply(outputActivations, -1), 1),
 					VecMath.log(VecMath.add(VecMath.multiply(outputActivations, -1), 1)))));
-		}
-	}
-
-	protected abstract class Layer {
-		public abstract double[] feedForward(double[] input);
-		public abstract void backpropagate();
-	}
-
-	protected final class FullyConnected extends Layer {
-		public double[] feedForward(double[] input) {
-			if (input.length != sizes[0]) {
-				throw new IllegalArgumentException("Input length does not match the amount of input-neurons");
-			}
-			double[] ret = new double[input.length];
-			System.arraycopy(input, 0, ret, 0, input.length);
-			for (int i=0;i<sizes.length-1;i++) {
-				ret = VecMath.sigmoid(VecMath.add(VecMath.dot(weights[i], ret), biases[i]));
-			}
-			return ret;
-		}
-		public void backpropagate() {
-
 		}
 	}
 
@@ -115,7 +92,6 @@ public class NeuralNet {
 		}
 		this.sizes = new int[size.length];
 		System.arraycopy(size, 0, this.sizes, 0, size.length);
-		this.layers = new Layer[this.sizes.length-1];
 		this.biases = new double[this.sizes.length-1][];
 		this.weights = new double[this.sizes.length-1][][];
 		for (int i=this.sizes.length-1;i>0;i--) {
@@ -125,7 +101,6 @@ public class NeuralNet {
 			if (size[i-1] != weights[i-1].length) {
 				throw new IllegalArgumentException("Weights length does not match sizes in layer " + (i-1));
 			}
-			this.layers[i-1] = new FullyConnected();
 			this.biases[i-1] = new double[biases[i-1].length];
 			System.arraycopy(biases[i-1], 0, this.biases[i-1], 0, biases[i-1].length);
 			this.weights[i-1] = new double[this.sizes[i]][];
@@ -184,7 +159,7 @@ public class NeuralNet {
 	 * @param layer the layer
 	 * @return amount of neurons
 	 */
-	public int getNeuronAmountInLayer(int layer) {
+	public int getLayerSize(int layer) {
 		if (layer < 0 || layer >= this.sizes.length) {
 			throw new IllegalArgumentException("Layer " + layer + " does not exist");
 		}
@@ -196,7 +171,7 @@ public class NeuralNet {
 	 *
 	 * @return input neurons
 	 */
-	public int getInputNeuronAmount() {
+	public int getInputSize() {
 		return this.sizes[0];
 	}
 
@@ -205,7 +180,7 @@ public class NeuralNet {
 	 *
 	 * @return output neurons
 	 */
-	public int getOutputNeuronAmount() {
+	public int getOutputSize() {
 		return this.sizes[this.sizes.length-1];
 	}
 
