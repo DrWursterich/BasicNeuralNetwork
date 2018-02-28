@@ -25,7 +25,7 @@ public class HandwritingRecognition {
 	private static int mouse_x = 0;
 	private static int mouse_y = 0;
 	private static int[][] image = new int[28][];
-	private static NeuralNet nn;
+	private static FeedForward nn;
 
 	/***
 	 * Initializes the JFrame
@@ -142,7 +142,7 @@ public class HandwritingRecognition {
 		if (trainingData == null || testData == null) {
 			System.exit(0);
 		}
-		nn = new NeuralNet(784, 50, 10);
+		nn = new FeedForward(784, 50, 10);
 		nn.setMonitoring(false, false, true, true);
 		nn.stochasticGradientDescent(trainingData, 5, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
 		resetImage();

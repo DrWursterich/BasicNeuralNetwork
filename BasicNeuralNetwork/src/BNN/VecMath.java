@@ -341,6 +341,17 @@ public class VecMath {
 		return ret;
 	}
 
+	public static double[][] transpose(double[][] a) {
+		double[][] ret = new double[a[0].length][];
+		for (int i=ret.length-1;i>=0;i--) {
+			ret[i] = new double[a.length];
+			for (int j=ret[i].length-1;j>=0;j--) {
+				ret[i][j] = a[j][i];
+			}
+		}
+		return ret;
+	}
+
 	public static double[] merge(double[][] a) {
 		int sumLength = 0;
 		for (int i=a.length-1;i>=0;i--) {
@@ -350,17 +361,6 @@ public class VecMath {
 		for (int i=a.length-1;i>=0;i--) {
 			for (int j=a[i].length-1;j>=0;j--) {
 				ret[--sumLength] = a[i][j];
-			}
-		}
-		return ret;
-	}
-
-	public static double[][] transpose(double[][] a) {
-		double[][] ret = new double[a[0].length][];
-		for (int i=ret.length-1;i>=0;i--) {
-			ret[i] = new double[a.length];
-			for (int j=ret[i].length-1;j>=0;j--) {
-				ret[i][j] = a[j][i];
 			}
 		}
 		return ret;
