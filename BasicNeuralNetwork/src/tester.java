@@ -21,16 +21,19 @@ public class tester {
 				Arrays.fill(nWeights[i][j], .5);
 			}
 		}
+		System.out.println("desired output");
 		ArrayDebug.printArray(trainingData[0][1]);
 		NeuralNet nn = new NeuralNet(nSizes, nBiases, nWeights);
-		ArrayDebug.printArray(nn.feedForward(trainingData[0][0]));
-		ArrayDebug.printArray(getWeights(nn));
+		System.out.println("weights");
+		ArrayDebug.printArray(getBiases(nn));
 		double[][][] newTrainingData = new double[1][][];
 		newTrainingData[0] = trainingData[0];
 		for (int i=0;i<5;i++) {
 			nn.stochasticGradientDescent(newTrainingData, 1, 1, 0.1, 5.0, nn.new CrossEntropy());
+			System.out.println("output");
 			ArrayDebug.printArray(nn.feedForward(trainingData[0][0]));
-			ArrayDebug.printArray(getWeights(nn));
+			System.out.println("biases");
+			ArrayDebug.printArray(getBiases(nn));
 		}
 	}
 
@@ -46,5 +49,16 @@ public class tester {
 			}
 		}
 		return weights[weights.length-1];
+	}
+
+	public static double[][] getBiases(NeuralNet nn) {
+		double[][] biases = new double[nn.getLayerAmount()-1][];
+		for (int i=biases.length-1;i>=0;i--) {
+			biases[i] = new double[nn.getLayerSize(i+1)];
+			for (int j=biases[i].length-1;j>=0;j--) {
+				biases[i][j] = nn.getBias(i+1, j+1);
+			}
+		}
+		return biases;
 	}
 }

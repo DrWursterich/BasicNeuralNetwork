@@ -192,13 +192,13 @@ public class NeuralNet {
 	 * @return the bias of the described neuron
 	 */
 	public double getBias(int layer, int neuron) {
-		if (layer < 0 || layer >= this.sizes.length) {
+		if (layer < 0 || layer > this.sizes.length) {
 			throw new IllegalArgumentException("Layer " + layer + " does not exist");
 		}
-		if (neuron < 0 || neuron >= this.sizes[layer]) {
+		if (neuron < 0 || neuron > this.sizes[layer]) {
 			throw new IllegalArgumentException("Neuron " + neuron + " does not exist in layer " + layer);
 		}
-		return this.biases[layer][neuron];
+		return this.biases[layer-1][neuron-1];
 	}
 
 	/**
@@ -215,7 +215,6 @@ public class NeuralNet {
 			throw new IllegalArgumentException("Layer " + layer + " does not exist or has no connections to previous neurons");
 		}
 		if (neuron <= 0 || neuron > this.sizes[layer]) {
-			throw new IllegalArgumentException("Neuron " + neuron + " does not exist in layer " + layer);
 		}
 		if (neuronFrom <= 0 || neuron > this.sizes[layer-1]) {
 			throw new IllegalArgumentException("Neuron " + neuronFrom + " does not exist in layer " + (layer-1));
@@ -493,12 +492,10 @@ public class NeuralNet {
 			}
 		}
 		this.biases = VecMath.subtract(this.biases, VecMath.multiply(nablaBiases, learningRate/miniBatch.length));
-		ArrayDebug.printArray(this.weights[this.weights.length-1]);
 		for (int j=this.weights.length-1;j>=0;j--) {
 			this.weights[j] = VecMath.multiply(VecMath.subtract(this.weights[j], VecMath.multiply(nablaWeights[j],
 					learningRate/miniBatch.length)), 1-learningRate*(regularization/trainingDataLength));
 		}
-		ArrayDebug.printArray(this.weights[this.weights.length-1]);
 	}
 
 	protected double[][][][] backpropagate(double[][] touple, CostFunction costFunction) {
