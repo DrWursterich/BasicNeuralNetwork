@@ -319,10 +319,13 @@ public class FeedForward extends NeuralNet {
 				nablaWeights[j] = VecMath.add(nablaWeights[j], deltaNablaWeights[j]);
 			}
 		}
-		for (int j=this.layers.length-1;j>=0;j--) {
-			((FullyConnected)this.layers[j]).backpropagate(VecMath.multiply(nablaBiases[j], learningRate/miniBatch.length),
-					VecMath.multiply(nablaWeights[j], learningRate/miniBatch.length),
-					1-learningRate*(regularization/trainingDataLength));
+		for (int j=0;j<this.layers.length;j++) {
+//			((FullyConnected)this.layers[j]).backpropagate(
+//					VecMath.multiply(nablaBiases[j], learningRate/miniBatch.length),
+//					VecMath.multiply(nablaWeights[j], learningRate/miniBatch.length),
+//					1-learningRate*(regularization/trainingDataLength));
+
+			((FullyConnected)this.layers[j]).backpropagate2(nablaBiases[j], nablaWeights[j], learningRate/miniBatch.length, 1-learningRate*(regularization/trainingDataLength));
 		}
 	}
 

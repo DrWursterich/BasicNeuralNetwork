@@ -1,5 +1,6 @@
 package BNN.layers;
 
+import BNN.ArrayDebug;
 import BNN.VecMath;
 
 public final class FullyConnected extends Layer {
@@ -104,5 +105,24 @@ public final class FullyConnected extends Layer {
 	public void backpropagate(double[] nablaBiases, double[][] nablaWeights, double regulation) {
 		this.biases = VecMath.subtract(this.biases, nablaBiases);
 		this.weights = VecMath.multiply(VecMath.subtract(this.weights, nablaWeights), regulation);
+	}
+
+	public void backpropagate2(double[] nablaBiases, double[][] nablaWeights, double percentage, double regulation) {
+		System.out.println("percentage: " + percentage + "\nnablaBiases");
+		ArrayDebug.printArray(nablaBiases);
+		System.out.println("VecMath.multiply(nablaBiases, percentage)");
+		ArrayDebug.printArray(VecMath.multiply(nablaBiases, percentage));
+		System.out.println("VecMath.subtract(this.biases, VecMath.multiply(nablaBiases, percentage))");
+		ArrayDebug.printArray(VecMath.subtract(this.biases, VecMath.multiply(nablaBiases, percentage)));
+//		System.out.println("changing biases from");
+//		ArrayDebug.printArray(this.biases);
+		this.biases = VecMath.subtract(this.biases, VecMath.multiply(nablaBiases, percentage));
+//		System.out.println("to");
+//		ArrayDebug.printArray(this.biases);
+//		System.out.println("changing weights from");
+//		ArrayDebug.printArray(this.weights);
+		this.weights = VecMath.multiply(VecMath.subtract(this.weights, VecMath.multiply(nablaWeights, percentage)), regulation);
+//		System.out.println("to");
+//		ArrayDebug.printArray(this.weights);
 	}
 }
