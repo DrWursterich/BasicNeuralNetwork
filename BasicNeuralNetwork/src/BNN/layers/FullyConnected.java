@@ -5,7 +5,7 @@ import BNN.VecMath;
 public final class FullyConnected extends Layer {
 	protected double[] biases;
 	protected double[][] weights;
-	
+
 	public FullyConnected(int neurons, int previousNeurons) {
 		super(neurons);
 		if (previousNeurons <= 0) {
@@ -14,14 +14,14 @@ public final class FullyConnected extends Layer {
 		this.biases = new double[this.neurons];
 		this.weights = new double[this.neurons][];
 		for (int i=this.weights.length-1;i>=0;i--) {
-			this.biases[i] = Math.random()*2-1;
+			this.biases[i] = 1;//Math.random()*2-1;
 			this.weights[i] = new double[previousNeurons];
 			for (int j=this.weights[i].length-1;j>=0;j--) {
-				this.weights[i][j] = Math.random()*2-1;
+				this.weights[i][j] = .5;//(Math.random()*2-1)/Math.sqrt(this.neurons);
 			}
 		}
 	}
-	
+
 	public FullyConnected(int neurons, double[][] weights, double[] biases) {
 		super(neurons);
 		if (weights.length != this.neurons) {
@@ -42,14 +42,14 @@ public final class FullyConnected extends Layer {
 			System.arraycopy(weights[i], 0, this.weights[i], 0, previousNeurons);
 		}
 	}
-	
+
 	public double getBias(int neuron) {
 		if (neuron < 0 || neuron >= this.neurons) {
 			throw new IllegalArgumentException("Neuron " + neuron + " does not exist in layer " + this);
 		}
 		return this.biases[neuron];
 	}
-	
+
 	public double getWeight(int neuron, int neuronFrom) {
 		if (neuron < 0 || neuron >= this.neurons) {
 			throw new IllegalArgumentException("Neuron " + neuron + " does not exist");
@@ -59,15 +59,30 @@ public final class FullyConnected extends Layer {
 		}
 		return this.weights[neuron][neuronFrom];
 	}
-	
-	public double[] getDelta(double[] previousDelta, double[] z) {
-		return VecMath.multiply(VecMath.dot(VecMath.transpose(this.weights), previousDelta), VecMath.sigmoidPrime(z));
+
+	public double[] getBiases() {
+		double[] ret = new double[this.biases.length];
+		System.arraycopy(this.biases, 0, ret, 0, ret.length);
+		return ret;
 	}
-	
+
+	public double[][] getWeights() {
+		double[][] ret = new double[this.biases.length][];
+		for (int i=ret.length-1;i>=0;i--) {
+			ret[i] = new double[this.weights[i].length];
+			System.arraycopy(this.weights[i], 0, ret[i], 0, ret[i].length);
+		}
+		return ret;
+	}
+
+	public double[] getDelta(double[] previousDelta, double[] z) {
+		return VecMath.multiply(VecMath.dot(VecMath.transpose(this.weights), previousDelta), z);
+	}
+
 	public double[] getZ(double[] activation) {
 		return VecMath.add(VecMath.dot(this.weights, activation), this.biases);
 	}
-	
+
 	public double getNorm() {
 		return Math.pow(VecMath.norm(this.weights), 2);
 	}
@@ -76,7 +91,7 @@ public final class FullyConnected extends Layer {
 	public int getInputs() {
 		return this.weights[0].length;
 	}
-	
+
 	@Override
 	public double[] feedForward(double[] input) {
 		if (input.length != this.weights[0].length) {

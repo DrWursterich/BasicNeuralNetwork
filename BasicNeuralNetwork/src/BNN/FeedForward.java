@@ -71,10 +71,10 @@ public class FeedForward extends NeuralNet {
 	 * @return the weight of the described connection
 	 */
 	public double getWeight(int layer, int neuron, int neuronFrom) {
-		if (layer <= 0 || layer >= this.layers.length) {
+		if (layer <= 0 || layer > this.layers.length) {
 			throw new IllegalArgumentException("Layer " + layer + " does not exist or has no connections to previous neurons");
 		}
-		return ((FullyConnected)this.layers[layer]).getWeight(neuron, neuronFrom);
+		return ((FullyConnected)this.layers[layer-1]).getWeight(neuron, neuronFrom);
 	}
 
 	protected void stochasticGradientDescentCheckArguments(double[][][] trainingData, int epochs, int miniBatchSize,
@@ -279,12 +279,12 @@ public class FeedForward extends NeuralNet {
 		for (int j=trainingData.length-1;j>=0;j--) {
 			newData[j] = VecMath.add(trainingData[j], 0);
 		}
-		for (int j=newData.length-1;j>=0;j--) {
-			int swapWith = (int)Math.random()*(newData.length-1);
-			double[][] temp = newData[j];
-			newData[j] = newData[swapWith];
-			newData[swapWith] = temp;
-		}
+//		for (int j=newData.length-1;j>=0;j--) {
+//			int swapWith = (int)Math.random()*(newData.length-1);
+//			double[][] temp = newData[j];
+//			newData[j] = newData[swapWith];
+//			newData[swapWith] = temp;
+//		}
 		int j = 0;
 		while (j<trainingData.length) {
 			int finalMiniBatchSize = Math.min(miniBatchSize, trainingData.length-j);
@@ -319,6 +319,10 @@ public class FeedForward extends NeuralNet {
 				nablaWeights[j] = VecMath.add(nablaWeights[j], deltaNablaWeights[j]);
 			}
 		}
+		System.out.println("Backpropagation parameter: ");
+		ArrayDebug.printArray(VecMath.multiply(nablaBiases[this.layers.length-1], learningRate/miniBatch.length));
+		ArrayDebug.printArray(VecMath.multiply(nablaWeights[this.layers.length-1], learningRate/miniBatch.length));
+		System.out.println(", " + (1-learningRate*(regularization/trainingDataLength)));
 		for (int j=this.layers.length-1;j>=0;j--) {
 			((FullyConnected)this.layers[j]).backpropagate(VecMath.multiply(nablaBiases[j], learningRate/miniBatch.length),
 					VecMath.multiply(nablaWeights[j], learningRate/miniBatch.length),
