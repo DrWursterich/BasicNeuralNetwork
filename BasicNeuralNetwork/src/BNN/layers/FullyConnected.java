@@ -44,20 +44,20 @@ public final class FullyConnected extends Layer {
 	}
 
 	public double getBias(int neuron) {
-		if (neuron < 0 || neuron >= this.neurons) {
-			throw new IllegalArgumentException("Neuron " + neuron + " does not exist in layer " + this);
+		if (neuron <= 0 || neuron > this.neurons) {
+			throw new IllegalArgumentException("Neuron " + neuron + " does not exist");
 		}
-		return this.biases[neuron];
+		return this.biases[neuron-1];
 	}
 
 	public double getWeight(int neuron, int neuronFrom) {
-		if (neuron < 0 || neuron >= this.neurons) {
+		if (neuron <= 0 || neuron > this.neurons) {
 			throw new IllegalArgumentException("Neuron " + neuron + " does not exist");
 		}
-		if (neuronFrom < 0 || neuron >= this.weights[0].length) {
+		if (neuronFrom <= 0 || neuron > this.weights[0].length) {
 			throw new IllegalArgumentException("No weight for neuron " + neuronFrom + " exist");
 		}
-		return this.weights[neuron][neuronFrom];
+		return this.weights[neuron-1][neuronFrom-1];
 	}
 
 	public double[] getBiases() {

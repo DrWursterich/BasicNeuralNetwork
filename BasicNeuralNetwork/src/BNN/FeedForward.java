@@ -31,17 +31,17 @@ public class FeedForward extends NeuralNet {
 	 */
 	public FeedForward(int[] size, double[][] biases, double[][][] weights) {
 		this(size);
-		if (size.length != biases.length) {
+		if (size.length != biases.length+1) {
 			throw new IllegalArgumentException("Bias length does not match size length");
 		}
-		if (size.length != weights.length) {
+		if (size.length != weights.length+1) {
 			throw new IllegalArgumentException("Weight length does not match size length");
 		}
 		for (int i=this.layers.length-1;i>0;i--) {
-			if (size[i-1] != biases[i-1].length) {
+			if (size[i] != biases[i-1].length) {
 				throw new IllegalArgumentException("Biases lenght does not match sizes in layer " + (i-1));
 			}
-			if (size[i-1] != weights[i-1].length) {
+			if (size[i] != weights[i-1].length) {
 				throw new IllegalArgumentException("Weights length does not match sizes in layer " + (i-1));
 			}
 		}
@@ -55,10 +55,10 @@ public class FeedForward extends NeuralNet {
 	 * @return the bias of the described neuron
 	 */
 	public double getBias(int layer, int neuron) {
-		if (layer < 0 || layer >= this.layers.length) {
-			throw new IllegalArgumentException("Layer " + layer + " does not exist");
+		if (layer <= 1 || layer > this.layers.length+1) {
+			throw new IllegalArgumentException("Layer " + layer + " does not exist or has no biases");
 		}
-		return ((FullyConnected)this.layers[layer]).getBias(neuron);
+		return ((FullyConnected)this.layers[layer-2]).getBias(neuron);
 	}
 
 	/**
@@ -71,10 +71,10 @@ public class FeedForward extends NeuralNet {
 	 * @return the weight of the described connection
 	 */
 	public double getWeight(int layer, int neuron, int neuronFrom) {
-		if (layer <= 0 || layer > this.layers.length) {
+		if (layer <= 1 || layer > this.layers.length+1) {
 			throw new IllegalArgumentException("Layer " + layer + " does not exist or has no connections to previous neurons");
 		}
-		return ((FullyConnected)this.layers[layer-1]).getWeight(neuron, neuronFrom);
+		return ((FullyConnected)this.layers[layer-2]).getWeight(neuron, neuronFrom);
 	}
 
 	protected void stochasticGradientDescentCheckArguments(double[][][] trainingData, int epochs, int miniBatchSize,
@@ -174,7 +174,7 @@ public class FeedForward extends NeuralNet {
 			}
 			System.out.println();
 		}
-		System.out.println(String.format("finished training in %5.8f seconds", (System.nanoTime()-startTime)/1000000000));
+		System.out.println(String.format("\\nfinished training in %5.8f seconds", (System.nanoTime()-startTime)/1000000000));
 	}
 
 	/**
@@ -222,7 +222,7 @@ public class FeedForward extends NeuralNet {
 				System.out.print(String.format("\n   Accuracy on training data:   %8d / %8d", trainingAccuracy[i], trainingData.length));
 			}
 		}
-		System.out.println(String.format("finished training in %5.8f seconds", (System.nanoTime()-startTime)/1000000000));
+		System.out.println(String.format("\nfinished training in %5.8f seconds", (System.nanoTime()-startTime)/1000000000));
 	}
 
 	/**
@@ -279,12 +279,12 @@ public class FeedForward extends NeuralNet {
 		for (int j=trainingData.length-1;j>=0;j--) {
 			newData[j] = VecMath.add(trainingData[j], 0);
 		}
-//		for (int j=newData.length-1;j>=0;j--) {
-//			int swapWith = (int)Math.random()*(newData.length-1);
-//			double[][] temp = newData[j];
-//			newData[j] = newData[swapWith];
-//			newData[swapWith] = temp;
-//		}
+		for (int j=newData.length-1;j>=0;j--) {
+			int swapWith = (int)Math.random()*(newData.length-1);
+			double[][] temp = newData[j];
+			newData[j] = newData[swapWith];
+			newData[swapWith] = temp;
+		}
 		int j = 0;
 		while (j<trainingData.length) {
 			int finalMiniBatchSize = Math.min(miniBatchSize, trainingData.length-j);
@@ -303,10 +303,10 @@ public class FeedForward extends NeuralNet {
 			nablaBiases[i] = new double[((FullyConnected)this.layers[i]).getNeurons()];
 			nablaWeights[i] = new double[((FullyConnected)this.layers[i]).getNeurons()][];
 			for (int j=nablaWeights[i].length-1;j>=0;j--) {
-				nablaBiases[i][j] = ((FullyConnected)this.layers[i]).getBias(j);
+				nablaBiases[i][j] = ((FullyConnected)this.layers[i]).getBias(j+1);
 				nablaWeights[i][j] = new double[((FullyConnected)this.layers[i]).getInputs()];
 				for (int k=nablaWeights[i][j].length-1;k>=0;k--) {
-					nablaWeights[i][j][k] = ((FullyConnected)this.layers[i]).getWeight(j, k);
+					nablaWeights[i][j][k] = ((FullyConnected)this.layers[i]).getWeight(j+1, k+1);
 				}
 			}
 		}
@@ -319,10 +319,6 @@ public class FeedForward extends NeuralNet {
 				nablaWeights[j] = VecMath.add(nablaWeights[j], deltaNablaWeights[j]);
 			}
 		}
-		System.out.println("Backpropagation parameter: ");
-		ArrayDebug.printArray(VecMath.multiply(nablaBiases[this.layers.length-1], learningRate/miniBatch.length));
-		ArrayDebug.printArray(VecMath.multiply(nablaWeights[this.layers.length-1], learningRate/miniBatch.length));
-		System.out.println(", " + (1-learningRate*(regularization/trainingDataLength)));
 		for (int j=this.layers.length-1;j>=0;j--) {
 			((FullyConnected)this.layers[j]).backpropagate(VecMath.multiply(nablaBiases[j], learningRate/miniBatch.length),
 					VecMath.multiply(nablaWeights[j], learningRate/miniBatch.length),
@@ -337,7 +333,7 @@ public class FeedForward extends NeuralNet {
 		double[][] activations = new double[this.layers.length+1][];
 		double[] activation = touple[INPUT];
 		double[] delta;
-		double[] z;
+		double[] z = new double[1];
 		activations[0] = activation;
 		for (int i=1;i<=this.layers.length;i++) {
 			z = ((FullyConnected)this.layers[i-1]).getZ(activation);
