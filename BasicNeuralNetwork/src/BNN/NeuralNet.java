@@ -84,10 +84,10 @@ public class NeuralNet {
 		if (Arrays.stream(size).anyMatch(i -> i<=0)) {
 			throw new IllegalArgumentException("Size values have to be positive");
 		}
-		if (size.length != biases.length) {
+		if (size.length != biases.length+1) {
 			throw new IllegalArgumentException("Bias length does not match size length");
 		}
-		if (size.length != weights.length) {
+		if (size.length != weights.length+1) {
 			throw new IllegalArgumentException("Weight length does not match size length");
 		}
 		this.sizes = new int[size.length];
@@ -95,17 +95,17 @@ public class NeuralNet {
 		this.biases = new double[this.sizes.length-1][];
 		this.weights = new double[this.sizes.length-1][][];
 		for (int i=this.sizes.length-1;i>0;i--) {
-			if (size[i-1] != biases[i-1].length) {
+			if (size[i] != biases[i-1].length) {
 				throw new IllegalArgumentException("Biases lenght does not match sizes in layer " + (i-1));
 			}
-			if (size[i-1] != weights[i-1].length) {
+			if (size[i] != weights[i-1].length) {
 				throw new IllegalArgumentException("Weights length does not match sizes in layer " + (i-1));
 			}
 			this.biases[i-1] = new double[biases[i-1].length];
 			System.arraycopy(biases[i-1], 0, this.biases[i-1], 0, biases[i-1].length);
 			this.weights[i-1] = new double[this.sizes[i]][];
 			for (int j=this.sizes[i]-1;j>=0;j--) {
-				if (size[i-1] != weights[i][j].length) {
+				if (size[i-1] != weights[i-1][j].length) {
 					throw new IllegalArgumentException("Weights length does not match sizes in layer " + i + " for neuron " + j);
 				}
 				this.weights[i-1][j] = new double[weights[i-1][j].length];
@@ -211,16 +211,16 @@ public class NeuralNet {
 	 * @return the weight of the described connection
 	 */
 	public double getWeight(int layer, int neuron, int neuronFrom) {
-		if (layer <= 0 || layer >= this.sizes.length) {
+		if (layer <= 0 || layer > this.sizes.length) {
 			throw new IllegalArgumentException("Layer " + layer + " does not exist or has no connections to previous neurons");
 		}
-		if (neuron < 0 || neuron >= this.sizes[layer]) {
+		if (neuron <= 0 || neuron > this.sizes[layer]) {
 			throw new IllegalArgumentException("Neuron " + neuron + " does not exist in layer " + layer);
 		}
-		if (neuronFrom < 0 || neuron >= this.sizes[layer-1]) {
+		if (neuronFrom <= 0 || neuron > this.sizes[layer-1]) {
 			throw new IllegalArgumentException("Neuron " + neuronFrom + " does not exist in layer " + (layer-1));
 		}
-		return this.weights[layer][neuron][neuronFrom];
+		return this.weights[layer-1][neuron-1][neuronFrom-1];
 	}
 
 	/**
@@ -493,10 +493,12 @@ public class NeuralNet {
 			}
 		}
 		this.biases = VecMath.subtract(this.biases, VecMath.multiply(nablaBiases, learningRate/miniBatch.length));
+		ArrayDebug.printArray(this.weights[this.weights.length-1]);
 		for (int j=this.weights.length-1;j>=0;j--) {
 			this.weights[j] = VecMath.multiply(VecMath.subtract(this.weights[j], VecMath.multiply(nablaWeights[j],
 					learningRate/miniBatch.length)), 1-learningRate*(regularization/trainingDataLength));
 		}
+		ArrayDebug.printArray(this.weights[this.weights.length-1]);
 	}
 
 	protected double[][][][] backpropagate(double[][] touple, CostFunction costFunction) {
