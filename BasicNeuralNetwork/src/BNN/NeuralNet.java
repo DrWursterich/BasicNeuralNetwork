@@ -1,5 +1,6 @@
 package BNN;
 
+import java.util.Observable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -20,10 +21,112 @@ public class NeuralNet {
 	protected int[] sizes;
 	protected double[][] biases;
 	protected double[][][] weights;
-	protected boolean monitorTrainingCost = false;
-	protected boolean monitorTrainingAccuracy = false;
-	protected boolean monitorEvaluationCost = false;
-	protected boolean monitorEvaluationAccuracy = true;
+	/**
+	 * Instance to monitor Training.<br/>
+	 * <i>e.g. nn.monitor.addObserver(...);<i>
+	 */
+	public final Monitor monitor = new Monitor();
+
+	/**
+	 * Internal class to monitor the Training of a {@link BNN.NeuralNet NeuralNet}.
+	 *
+	 * @author Mario Schaeper
+	 */
+	public final class Monitor extends Observable {
+		/**
+		 * Index for the training cost
+		 */
+		public static final int TRAINING_COST = 0;
+		/**
+		 * Index for the training accuracy
+		 */
+		public static final int TRAINING_ACCURACY = 1;
+		/**
+		 * Index for the evaluation cost
+		 */
+		public static final int EVALUATION_COST = 2;
+		/**
+		 * index for the evaluation accuracy
+		 */
+		public static final int EVALUATION_ACCURACY = 3;
+		protected boolean trainingCost = false;
+		protected boolean trainingAccuracy = false;
+		protected boolean evaluationCost = false;
+		protected boolean evaluationAccuracy = true;
+		protected double[] values = new double[] {0, 0, 0, 0};
+
+		/**
+		 * Internal class that represents a monitored change.
+		 * The index is the value that changed:<ul>
+		 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+		 * {@link BNN.NeuralNet.Monitor.TRAINING_COST TRAINING_COST}</li>
+		 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+		 * {@link BNN.NeuralNet.Monitor.TRAINING_ACCURACY TRAINING_ACCURACY}</li>
+		 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+		 * {@link BNN.NeuralNet.Monitor.EVALUATION_COST EVALUATION_COST}</li>
+		 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+		 * {@link BNN.NeuralNet.Monitor.EVALUATION_ACCURACY EVALUATION_ACCURACY}</li></ul>
+		 *
+		 * @author Mario Schaeper
+		 */
+		public final class Change {
+			private final int index;
+			private final double value;
+
+			/**
+			 * Invokes a Change object with an index of the monitored change and the new value.
+			 * The index should be one of the existing:<ul>
+			 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+			 * {@link BNN.NeuralNet.Monitor.TRAINING_COST TRAINING_COST}</li>
+			 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+			 * {@link BNN.NeuralNet.Monitor.TRAINING_ACCURACY TRAINING_ACCURACY}</li>
+			 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+			 * {@link BNN.NeuralNet.Monitor.EVALUATION_COST EVALUATION_COST}</li>
+			 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+			 * {@link BNN.NeuralNet.Monitor.EVALUATION_ACCURACY EVALUATION_ACCURACY}</li></ul>
+			 *
+			 * @param index the index of the change
+			 * @param value the value after the change
+			 */
+			public Change(int index, double value) {
+				this.index = index;
+				this.value = value;
+			}
+
+			/**
+			 * Returns the index of the change.
+			 * Preferably one of these:<ul>
+			 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+			 * {@link BNN.NeuralNet.Monitor.TRAINING_COST TRAINING_COST}</li>
+			 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+			 * {@link BNN.NeuralNet.Monitor.TRAINING_ACCURACY TRAINING_ACCURACY}</li>
+			 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+			 * {@link BNN.NeuralNet.Monitor.EVALUATION_COST EVALUATION_COST}</li>
+			 * <li>{@link BNN.NeuralNet NeuralNet}.{@link BNN.NeuralNet.Monitor Monitor}.
+			 * {@link BNN.NeuralNet.Monitor.EVALUATION_ACCURACY EVALUATION_ACCURACY}</li></ul>
+			 *
+			 * @return the index
+			 */
+			public int getIndex() {
+				return this.index;
+			}
+
+			/**
+			 * Returns the new value after the change on the index.
+			 *
+			 * @return the value
+			 */
+			public double getValue() {
+				return this.value;
+			}
+		}
+
+		protected void setValue(int index, double value) {
+			this.values[index] = value;
+			setChanged();
+			notifyObservers(new Change(index, this.values[index]));
+		}
+	}
 
 	/***
 	 * Abstract class for costfunction classes to inherit from.
@@ -233,10 +336,10 @@ public class NeuralNet {
 	 * @param evaluationAccuracy state of monitoring the evaluation accuracy
 	 */
 	public void setMonitoring(boolean trainingCost, boolean trainingAccuracy, boolean evaluationCost, boolean evaluationAccuracy) {
-		this.monitorTrainingCost = trainingCost;
-		this.monitorTrainingAccuracy = trainingAccuracy;
-		this.monitorEvaluationCost = evaluationCost;
-		this.monitorEvaluationAccuracy = evaluationAccuracy;
+		this.monitor.trainingCost = trainingCost;
+		this.monitor.trainingAccuracy = trainingAccuracy;
+		this.monitor.evaluationCost = evaluationCost;
+		this.monitor.evaluationAccuracy = evaluationAccuracy;
 	}
 
 	/**
@@ -336,20 +439,24 @@ public class NeuralNet {
 		for (int i=0;i<epochs;i++) {
 			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate, regularization, costFunction);
 			System.out.print(String.format("\nEpoch %3d complete", i+1));
-			if (monitorTrainingCost) {
+			if (this.monitor.trainingCost) {
 				trainingCost[i] = this.totalCost(trainingData, regularization, costFunction);
+				this.monitor.setValue(Monitor.TRAINING_COST, trainingCost[i]);
 				System.out.print(String.format("\n   Cost on training data:       %f", trainingCost[i]));
 			}
-			if (this.monitorTrainingAccuracy) {
+			if (this.monitor.trainingAccuracy) {
 				trainingAccuracy[i] = this.accuracy(trainingData);
+				this.monitor.setValue(Monitor.TRAINING_ACCURACY, trainingAccuracy[i]);
 				System.out.print(String.format("\n   Accuracy on training data:   %8d / %8d", trainingAccuracy[i], trainingData.length));
 			}
-			if (this.monitorEvaluationCost) {
+			if (this.monitor.evaluationCost) {
 				evaluationCost[i] = this.totalCost(testData, regularization, costFunction);
+				this.monitor.setValue(Monitor.EVALUATION_COST, evaluationCost[i]);
 				System.out.print(String.format("\n   Cost on evaluation data:     %f", evaluationCost[i]));
 			}
-			if (this.monitorEvaluationAccuracy) {
+			if (this.monitor.evaluationAccuracy) {
 				evaluationAccuracy[i] = this.accuracy(testData);
+				this.monitor.setValue(Monitor.EVALUATION_ACCURACY, evaluationAccuracy[i]);
 				System.out.print(String.format("\n   Accuracy on evaluation data: %8d / %8d", evaluationAccuracy[i], testData.length));
 			}
 			System.out.println();
@@ -393,12 +500,14 @@ public class NeuralNet {
 		for (int i=0;i<epochs;i++) {
 			this.stochasticGradientDescentInner(trainingData, miniBatchSize, learningRate, regularization, costFunction);
 			System.out.print(String.format("\nEpoch %3d complete", i+1));
-			if (this.monitorTrainingCost) {
+			if (this.monitor.trainingCost) {
 				trainingCost[i] = this.totalCost(trainingData, regularization, costFunction);
+				this.monitor.setValue(Monitor.TRAINING_COST, trainingCost[i]);
 				System.out.print(String.format("\n   Cost on training data:       %f", trainingCost[i]));
 			}
-			if (this.monitorTrainingAccuracy) {
+			if (this.monitor.trainingAccuracy) {
 				trainingAccuracy[i] = this.accuracy(trainingData);
+				this.monitor.setValue(Monitor.TRAINING_ACCURACY, trainingAccuracy[i]);
 				System.out.print(String.format("\n   Accuracy on training data:   %8d / %8d", trainingAccuracy[i], trainingData.length));
 			}
 		}
