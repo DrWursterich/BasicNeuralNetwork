@@ -354,6 +354,14 @@ public class VecMath {
 		}
 		return ret;
 	}
+	
+	public static double[] merge(double[][][] a) {
+		double[][] ret = new double[a.length][];
+		for (int i=a.length-1;i>=0;i--) {
+			ret[i] = VecMath.merge(a[i]);
+		}
+		return VecMath.merge(ret);
+	}
 
 	public static double[][] transpose(double[][] a) {
 		double[][] ret = new double[a[0].length][];
