@@ -27,7 +27,7 @@ public class HandwritingRecognition extends Application {
 		if (trainingData == null || testData == null) {
 			System.exit(0);
 		}
-		graph = new LineGraph(100, 550, 1000, 500, 0, 16, 0.9, 1);
+		graph = new LineGraph(100, 550, 1000, 500, 0, 15, 0.9, 1);
 		try {
 			int graphEvaluationAccuracy = graph.addGraph(new double[][] {}, Color.BLUE);
 			int graphTrainingAccuracy = graph.addGraph(new double[][] {}, Color.RED);
@@ -45,11 +45,11 @@ public class HandwritingRecognition extends Application {
 								switch (change.getIndex()) {
 								case NeuralNet.Monitor.TRAINING_ACCURACY:
 									graph.extendGraph(graphTrainingAccuracy, new double[] {
-											1+(int)(iteration/2), change.getValue()/trainingData.length});
+											1+iteration/2, change.getValue()/trainingData.length});
 									break;
 								case NeuralNet.Monitor.EVALUATION_ACCURACY:
 									graph.extendGraph(graphEvaluationAccuracy, new double[] {
-											1+(int)(iteration/2), change.getValue()/testData.length});
+											1+iteration/2, change.getValue()/testData.length});
 									break;
 								default:
 									break;

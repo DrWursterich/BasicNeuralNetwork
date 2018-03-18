@@ -38,11 +38,11 @@ public class VecMath {
 	}
 
 	public static double[] softmax(double[] a) {
-		return VecMath.log(VecMath.divide(VecMath.exp(a), VecMath.sum(a)));
+		return VecMath.divide(VecMath.exp(a), VecMath.sum(a));
 	}
 
 	public static double[][] softmax(double[][] a) {
-		return VecMath.log(VecMath.divide(VecMath.exp(a), VecMath.sum(a)));
+		return VecMath.divide(VecMath.exp(a), VecMath.sum(a));
 	}
 
 	public static double norm(double[] a) {

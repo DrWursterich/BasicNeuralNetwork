@@ -279,7 +279,7 @@ public class ConvolutionalNeuralNet {
 			{{new double[fullyConnectedSize], new double[outputs]}}};
 		this.weights = new double[][][][][][][] {new double[layers.length][][][][][],
 			{{{{new double[fullyConnectedSize][], new double[outputs][]}}}}};
-		for (int i=layers.length-1;i>=0;i--) {
+		for (int i=0;i<layers.length;i++) {
 			this.sizes[1][i] = layers[i].getSizes();
 			this.kernelSizes[i] = layers[i].getKernelSize();
 			this.strideLengths[i] = layers[i].getStrideLengths();
@@ -287,21 +287,22 @@ public class ConvolutionalNeuralNet {
 			this.biases[0][i] = new double[this.sizes[1][i].length][];
 			this.weights[0][i] = new double[this.sizes[1][i].length][][][][];
 			for (int j=this.sizes[1][i].length-1;j>=0;j--) {
-				if ((curImageWidth - this.featureMapRadii[i][j] * 2-1)%(this.strideLengths[i][j]+1) != 0
-						|| (curImageHeight - this.featureMapRadii[i][j] * 2-1)%(this.strideLengths[i][j]+1) != 0) {
+				if ((curImageWidth - this.featureMapRadii[i][j] * 2-1)%(this.strideLengths[i][j]) != 0
+						|| (curImageHeight - this.featureMapRadii[i][j] * 2-1)%(this.strideLengths[i][j]) != 0) {
 					throw new IllegalArgumentException("stride length incompatible with image dimensions");
 				}
-				curImageWidth = (curImageWidth - this.featureMapRadii[i][j] * 2-1)/(this.strideLengths[i][j]+1)+1;
-				curImageHeight = (curImageHeight - this.featureMapRadii[i][j] * 2-1)/(this.strideLengths[i][j]+1)+1;
+				curImageWidth = (curImageWidth - this.featureMapRadii[i][j] * 2-1)/(this.strideLengths[i][j])+1;
+				curImageHeight = (curImageHeight - this.featureMapRadii[i][j] * 2-1)/(this.strideLengths[i][j])+1;
 				this.biases[0][i][j] = new double[this.sizes[1][i][j]];
 				this.weights[0][i][j] = new double[this.sizes[1][i][j]][][][];
 				for (int k=this.sizes[1][i][j]-1;k>=0;k--) {
 					this.biases[0][i][j][k] = Math.random()*2-1;
-					this.weights[0][i][j][k] = new double[j==0 ? inputChannels : this.sizes[1][i][j-1]][][];
+					this.weights[0][i][j][k] = new double[j==0 ? (i==0 ? inputChannels
+							: this.sizes[1][i-1][this.sizes[1][i-1].length-1]) : this.sizes[1][i][j-1]][][];
 					for (int l=this.weights[0][i][j][k].length-1;l>=0;l--) {
 						this.weights[0][i][j][k][l] = new double[this.featureMapRadii[i][j]*2+1][];
 						for (int m=this.weights[0][i][j][k][l].length-1;m>=0;m--) {
-							this.weights[0][i][j][k][l][m] = new double[this.featureMapRadii[i][j]];
+							this.weights[0][i][j][k][l][m] = new double[this.featureMapRadii[i][j]*2+1];
 							for (int n=this.weights[0][i][j][k][l][m].length-1;n>=0;n--) {
 								this.weights[0][i][j][k][l][m][n] = (Math.random()*2-1)/(this.featureMapRadii[i][j]*2+1);
 							}
@@ -309,6 +310,9 @@ public class ConvolutionalNeuralNet {
 					}
 				}
 			}
+			//pooling function extracting!
+			curImageWidth += 1 - this.kernelSizes[i];//missing poolingStrideLength
+			curImageHeight += 1 - this.kernelSizes[i];//missing poolingStrideLength
 		}
 		for (int i=layers.length-1;i>=0;i--) {
 			for (int j=fullyConnectedSize-1;j>=0;j--) {
@@ -317,6 +321,13 @@ public class ConvolutionalNeuralNet {
 						* this.sizes[1][this.sizes[1].length - 1][this.sizes[1][this.sizes[1].length - 1].length - 1]];
 				for (int k=this.weights[1][0][0][0][0][j].length-1;k>=0;k--) {
 					this.weights[1][0][0][0][0][j][k] = (Math.random()*2-1)/Math.sqrt(this.weights[1][0][0][0][0][j].length);
+				}
+			}
+			for (int j=outputs-1;j>=0;j--) {
+				this.biases[1][0][1][j] = Math.random()*2-1;
+				this.weights[1][0][0][0][1][j] = new double[fullyConnectedSize];
+				for (int k=this.weights[1][0][0][0][1][j].length-1;k>=0;k--) {
+					this.weights[1][0][0][0][1][j][k] = (Math.random()*2-1)/Math.sqrt(this.weights[1][0][0][0][1][j].length);
 				}
 			}
 		}
@@ -440,13 +451,14 @@ public class ConvolutionalNeuralNet {
 		if (input.length != this.sizes[0][0][0]) {
 			throw new IllegalArgumentException("Input length does not match the amount of input-neurons");
 		}
-		double[][][] retTmp = new double[input.length][][];
+		double[][][] retTmp = input;
 		int curImageWidth = this.inputWidth;
 		int curImageHeight = this.inputHeight;
 		for (int i=0;i<this.sizes[1].length;i++) {
-			for (int j=this.sizes[1][i].length-1;j>=0;j--) {
-				curImageWidth = (curImageWidth - this.featureMapRadii[i][j] * 2-1)/(this.strideLengths[i][j]+1)+1;
-				curImageHeight = (curImageHeight - this.featureMapRadii[i][j] * 2-1)/(this.strideLengths[i][j]+1)+1;
+			for (int j=0;j<this.sizes[1][i].length;j++) {
+				int sl = this.strideLengths[i][j]-1;
+				curImageWidth = (curImageWidth - this.featureMapRadii[i][j] * 2-1)/(sl+1)+1;
+				curImageHeight = (curImageHeight - this.featureMapRadii[i][j] * 2-1)/(sl+1)+1;
 				double[][][] tmp = new double[this.sizes[1][i][j]][][];
 				for (int k=tmp.length-1;k>=0;k--) {
 					tmp[k] = new double[curImageWidth][];
@@ -457,8 +469,7 @@ public class ConvolutionalNeuralNet {
 							for (int n=retTmp.length-1;n>=0;n--) {
 								for (int o=this.featureMapRadii[i][j]*2;o>=0;o--) {
 									for (int p=this.featureMapRadii[i][j]*2;p>=0;p--) {
-										tmp[k][l][m] += this.weights[0][i][j][k][n][o][p]
-												* retTmp[k][this.strideLengths[i][j]*l+o][this.strideLengths[i][j]*m+p];
+										tmp[k][l][m] += this.weights[0][i][j][k][n][o][p] * retTmp[n][sl*l+o][sl*m+p];
 									}
 								}
 							}
@@ -468,11 +479,13 @@ public class ConvolutionalNeuralNet {
 				retTmp = tmp;
 			}
 			//pooling function extracting!
+			curImageWidth += 1 - this.kernelSizes[i];//missing poolingStrideLength
+			curImageHeight += 1 - this.kernelSizes[i];//missing poolingStrideLength
 			double[][][] tmp = new double[retTmp.length][][];
 			for (int j=tmp.length-1;j>=0;j--) {
-				tmp[j] = new double[retTmp[j].length+1-this.kernelSizes[i]][]; //missing poolingStrideLength
+				tmp[j] = new double[curImageWidth][];
 				for (int k=tmp[j].length-1;k>=0;k--) {
-					tmp[j][k] = new double[retTmp[j][k].length+1-this.kernelSizes[i]]; //missing poolingStrideLength
+					tmp[j][k] = new double[curImageHeight];
 					for (int l=tmp[j][k].length-1;l>=0;l--) {
 						double max = 0;
 						for (int m=this.kernelSizes[i]-1;m>=0;m--) {
@@ -484,15 +497,14 @@ public class ConvolutionalNeuralNet {
 					}
 				}
 			}
+			retTmp = tmp;
 		}
 		double[] ret = VecMath.merge(retTmp);
-		for (int i=this.sizes[this.sizes.length-1][0].length-2;i>=0;i--) {
+		for (int i=0;i<this.sizes[this.sizes.length-1][0].length;i++) {
 			ret = VecMath.sigmoid(VecMath.add(VecMath.dot(this.weights[this.weights.length-1][0][0][0][i], ret),
 					this.biases[this.biases.length-1][0][i]));
 		}
-		return VecMath.softmax(VecMath.add(VecMath.dot(
-				this.weights[this.weights.length-1][0][0][0][this.weights[this.weights.length-1][0][0][0].length-1], 
-				ret), this.biases[this.biases.length-1][0][this.biases[this.biases.length-1][0].length-1]));
+		return VecMath.softmax(ret);
 	}
 
 //	protected void stochasticGradientDescentCheckArguments(double[][][] trainingData, int epochs, int miniBatchSize,
