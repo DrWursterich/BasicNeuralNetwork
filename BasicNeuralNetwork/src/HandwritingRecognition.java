@@ -10,6 +10,9 @@ import javafx.scene.layout.*;
 import javafx.scene.canvas.*;
 import javafx.scene.image.*;
 import javafx.scene.shape.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
 import javafx.scene.control.Button;
 import javafx.scene.paint.Color;
 
@@ -27,6 +30,8 @@ public class HandwritingRecognition extends Application {
 	private final static double lineWidth = 10;
 	private final static double lineGraphWidth = 1000;
 	private final static double lineGraphHeight = 500;
+	private final static int trainingEpochs = 15;
+	private final static double minLossToTrack = 0.9;
 	private static LineGraph graph;
 	private static NeuralNet nn;
 
@@ -36,7 +41,12 @@ public class HandwritingRecognition extends Application {
 		if (trainingData == null || testData == null) {
 			System.exit(0);
 		}
-		graph = new LineGraph(canvasX*2+canvasSize*canvasScale, lineGraphHeight+canvasY, lineGraphWidth, lineGraphHeight, 0, 15, 0.9, 1);
+		graph = new LineGraph(canvasX*2+canvasSize*canvasScale, lineGraphHeight+canvasY,
+				lineGraphWidth, lineGraphHeight, 0, trainingEpochs, minLossToTrack, 1);
+		graph.setMarking(LineGraph.marking(trainingEpochs+1, 6, 1, 0, 1, 2, 6,
+				Font.font("verdana", FontWeight.LIGHT, FontPosture.REGULAR, 10)));
+		graph.setX(graph.getX() + graph.getMarkingSizeX());
+		graph.setScaleStrokeWidth(2);
 		try {
 			int graphEvaluationAccuracy = graph.addGraph(Color.BLUE);
 			int graphTrainingAccuracy = graph.addGraph(Color.RED);
@@ -69,7 +79,7 @@ public class HandwritingRecognition extends Application {
 							}
 						}
 					});
-					nn.stochasticGradientDescent(trainingData, 15, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
+					nn.stochasticGradientDescent(trainingData, trainingEpochs, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
 				}
 			};
 			nnThread.start();
@@ -82,6 +92,7 @@ public class HandwritingRecognition extends Application {
 				e.printStackTrace();
 			}
 		} catch (Exception e) {
+			System.out.println(e.getMessage());
 			e.printStackTrace();
 			System.exit(0);
 		}
@@ -104,7 +115,9 @@ public class HandwritingRecognition extends Application {
 		pane.setHgap(10);
 		pane.setVgap(10);
 
-		Scene scene = new Scene(pane, 3*canvasX+canvasScale*canvasSize+lineGraphWidth, lineGraphHeight+2*canvasY);
+		Scene scene = new Scene(pane,
+				3*canvasX+canvasScale*canvasSize+lineGraphWidth+graph.getMarkingSizeX(),
+				lineGraphHeight+2*canvasY+graph.getMarkingSizeY());
 		scene.setOnMousePressed(e -> {
 			gc.beginPath();
 			gc.lineTo(e.getSceneX()-canvasX-canvasBorderWidth, e.getSceneY()-canvasY-canvasBorderWidth);
@@ -142,7 +155,8 @@ public class HandwritingRecognition extends Application {
 			canvas.snapshot(null, wim);
 			PixelReader px = wim.getPixelReader();
 			byte[] buffer = new byte[(int)wim.getWidth() * (int)wim.getHeight() * 4];
-			px.getPixels(0, 0, (int)wim.getWidth(), (int)wim.getHeight(), PixelFormat.getByteBgraInstance(), buffer, 0, (int)wim.getWidth()*4);
+			px.getPixels(0, 0, (int)wim.getWidth(), (int)wim.getHeight(),
+					PixelFormat.getByteBgraInstance(),buffer, 0, (int)wim.getWidth()*4);
 			double[][] inputImage = new double[canvasSize][];
 			for (int i=inputImage.length-1;i>=0;i--) {
 				inputImage[i] = new double[canvasSize];
@@ -151,16 +165,21 @@ public class HandwritingRecognition extends Application {
 					for (int k=canvasScale-1;k>=0;k--) {
 						for (int l=canvasScale-1;l>=0;l--) {
 							for (int m=2;m>=0;m--) {
-								inputImage[i][j] += buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)+k*canvasSize*canvasScale+l)+m]<0 ? (
-										buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)+k*canvasSize*canvasScale+l)+m]>=-1 ?
-												buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)+k*canvasSize*canvasScale+l)+m] : -1) : 0;
+								inputImage[i][j] += buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)
+										+k*canvasSize*canvasScale+l)+m]<0 ? (
+										buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)
+												+k*canvasSize*canvasScale+l)+m]>=-1 ?
+												buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)
+														+k*canvasSize*canvasScale+l)+m] : -1) : 0;
 							}
 						}
 					}
 					inputImage[i][j] = 1+inputImage[i][j] / (3*Math.pow(canvasScale, 2));
 				}
 			}
-			ArrayDebug.printArray(nn.feedForward(VecMath.merge(inputImage)));
+			System.out.println();
+			ArrayDebug.printArray(new double[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
+			ArrayDebug.printArray(nn.feedForward(VecMath.merge(inputImage))); // The inputImage array has to be merged if a fcnn is used
 		});
 
 		pane.add(buttonReset, 4, 23);
