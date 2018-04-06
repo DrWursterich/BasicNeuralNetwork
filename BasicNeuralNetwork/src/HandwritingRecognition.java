@@ -10,10 +10,8 @@ import javafx.scene.layout.*;
 import javafx.scene.canvas.*;
 import javafx.scene.image.*;
 import javafx.scene.shape.*;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontPosture;
-import javafx.scene.text.FontWeight;
-import javafx.scene.control.Button;
+import javafx.scene.text.*;
+import javafx.scene.control.*;
 import javafx.scene.paint.Color;
 
 /***
@@ -31,7 +29,7 @@ public class HandwritingRecognition extends Application {
 	private final static double lineGraphWidth = 1000;
 	private final static double lineGraphHeight = 500;
 	private final static int trainingEpochs = 15;
-	private final static double minLossToTrack = 0.9;
+	private final static double minLossToTrack = 0;
 	private static LineGraph graph;
 	private static NeuralNet nn;
 
@@ -42,59 +40,54 @@ public class HandwritingRecognition extends Application {
 			System.exit(0);
 		}
 		graph = new LineGraph(canvasX*2+canvasSize*canvasScale, lineGraphHeight+canvasY,
-				lineGraphWidth, lineGraphHeight, 0, trainingEpochs, minLossToTrack, 1);
-		graph.setMarking(LineGraph.marking(trainingEpochs+1, 6, 1, 0, 1, 2, 6,
+				lineGraphWidth, lineGraphHeight, 0, trainingEpochs, minLossToTrack, 100);
+		graph.setMarking(LineGraph.marking(trainingEpochs+1, 6, 2, 0, 3, 0, 6,
 				Font.font("verdana", FontWeight.LIGHT, FontPosture.REGULAR, 10)));
 		graph.setX(graph.getX() + graph.getMarkingSizeX());
 		graph.setScaleStrokeWidth(2);
-		try {
-			int graphEvaluationAccuracy = graph.addGraph(Color.BLUE);
-			int graphTrainingAccuracy = graph.addGraph(Color.RED);
-			Thread nnThread = new Thread() {
-				@Override
-				public void run() {
-					nn = new NeuralNet(784, 50, 10);
-					nn.setMonitoring(false, true, false, true);
-					nn.monitor.addObserver(new Observer() {
-						private int iteration = 0;
-						@Override
-						public void update(Observable obj, Object arg) {
-							NeuralNet.Monitor.Change change = (NeuralNet.Monitor.Change)arg;
-							try {
-								switch (change.getIndex()) {
-								case NeuralNet.Monitor.TRAINING_ACCURACY:
-									graph.extendGraph(graphTrainingAccuracy, new double[] {
-											1+iteration/2, change.getValue()/trainingData.length});
-									break;
-								case NeuralNet.Monitor.EVALUATION_ACCURACY:
-									graph.extendGraph(graphEvaluationAccuracy, new double[] {
-											1+iteration/2, change.getValue()/testData.length});
-									break;
-								default:
-									break;
-								}
-								iteration++;
-							} catch (Exception e) {
-								e.printStackTrace();
+		int graphEvaluationAccuracy = graph.addGraph(Color.BLUE);
+		int graphTrainingAccuracy = graph.addGraph(Color.RED);
+		Thread nnThread = new Thread() {
+			@Override
+			public void run() {
+				nn = new NeuralNet(784, 50, 10);
+				nn.setMonitoring(false, true, false, true);
+				nn.monitor.addObserver(new Observer() {
+					private int iteration = 0;
+					@Override
+					public void update(Observable obj, Object arg) {
+						NeuralNet.Monitor.Change change = (NeuralNet.Monitor.Change)arg;
+						try {
+							switch (change.getIndex()) {
+							case NeuralNet.Monitor.TRAINING_ACCURACY:
+								graph.extendGraph(graphTrainingAccuracy, 1+iteration/2,
+										change.getValue()/trainingData.length*100);
+								break;
+							case NeuralNet.Monitor.EVALUATION_ACCURACY:
+								graph.extendGraph(graphEvaluationAccuracy, 1+iteration/2,
+										change.getValue()/testData.length*100);
+								break;
+							default:
+								break;
 							}
+							iteration++;
+						} catch (Exception e) {
+							e.printStackTrace();
 						}
-					});
-					nn.stochasticGradientDescent(trainingData, trainingEpochs, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
-				}
-			};
-			nnThread.start();
-
-			launch(args);
-
-			try {
-				nnThread.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+					}
+				});
+				nn.stochasticGradientDescent(trainingData, trainingEpochs, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
 			}
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
+		};
+		nnThread.setPriority(Thread.MAX_PRIORITY);
+		nnThread.start();
+
+		launch(args);
+
+		try {
+			nnThread.join();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
-			System.exit(0);
 		}
 	}
 
@@ -182,8 +175,20 @@ public class HandwritingRecognition extends Application {
 			ArrayDebug.printArray(nn.feedForward(VecMath.merge(inputImage))); // The inputImage array has to be merged if a fcnn is used
 		});
 
+		Slider yScaleSlider = new Slider(0, 95, 0);
+		yScaleSlider.setBlockIncrement(1);
+		yScaleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+			graph.setYStart((double)newValue);
+		});
+
+		scene.setOnScroll(event -> {
+			graph.setYStart(Math.min(98, Math.max(0, graph.getYStart() + (event.getDeltaY() > 0 ? 1 : -1))));
+			yScaleSlider.setValue(graph.getYStart());
+		});
+
 		pane.add(buttonReset, 4, 23);
-		pane.add(buttonSubmit, 10, 23);
+		pane.add(buttonSubmit, 4, 24);
+		pane.add(yScaleSlider, 4, 35);
 		pane.getChildren().addAll(canvasGroup, graph.getCompleteGroup());
 
 		primaryStage.setTitle("Handwriting Recognition");
