@@ -20,18 +20,18 @@ import javafx.scene.paint.Color;
  */
 @SuppressWarnings("restriction")
 public class HandwritingRecognition extends Application {
-	private final static double canvasX = 35;
-	private final static double canvasY = 40;
-	private final static int canvasSize = 28;
-	private final static int canvasScale = 6;
-	private final static double canvasBorderWidth = 4;
-	private final static double lineWidth = 10;
-	private final static double lineGraphWidth = 1000;
-	private final static double lineGraphHeight = 500;
-	private final static int trainingEpochs = 15;
-	private final static double minLossToTrack = 0;
+	private final static double CANVAS_X = 35;
+	private final static double CANVAS_Y = 40;
+	private final static int CANVAS_SIZE = 28;
+	private final static int CANVAS_SCALE = 6;
+	private final static double CANVAS_BORDER_WIDTH = 4;
+	private final static double LINE_WIDTH = 10;
+	private final static double LINEGRAPH_WIDTH = 1000;
+	private final static double LINEGRAPH_HEIGHT = 500;
+	private final static int TRAINING_EPOCHS = 15;
 	private static LineGraph graph;
 	private static NeuralNet nn;
+	private double dragStartY = 0;
 
 	public static void main(String[] args) {
 		double[][][] trainingData = mnistLoader.loadArrayZip("mnistData.zip", "TrainingData.ini");
@@ -39,12 +39,8 @@ public class HandwritingRecognition extends Application {
 		if (trainingData == null || testData == null) {
 			System.exit(0);
 		}
-		graph = new LineGraph(canvasX*2+canvasSize*canvasScale, lineGraphHeight+canvasY,
-				lineGraphWidth, lineGraphHeight, 0, trainingEpochs, minLossToTrack, 100);
-		graph.setMarking(LineGraph.marking(trainingEpochs+1, 6, 2, 0, 3, 0, 6,
-				Font.font("verdana", FontWeight.LIGHT, FontPosture.REGULAR, 10)));
-		graph.setX(graph.getX() + graph.getMarkingSizeX());
-		graph.setScaleStrokeWidth(2);
+		graph = new LineGraph(CANVAS_X*2+CANVAS_SIZE*CANVAS_SCALE, LINEGRAPH_HEIGHT+CANVAS_Y,
+				LINEGRAPH_WIDTH, LINEGRAPH_HEIGHT, 0, TRAINING_EPOCHS, 0, 100);
 		int graphEvaluationAccuracy = graph.addGraph(Color.BLUE);
 		int graphTrainingAccuracy = graph.addGraph(Color.RED);
 		Thread nnThread = new Thread() {
@@ -52,6 +48,30 @@ public class HandwritingRecognition extends Application {
 			public void run() {
 				nn = new NeuralNet(784, 50, 10);
 				nn.setMonitoring(false, true, false, true);
+				double tdAcc = 0;
+				for (int i=trainingData.length-1;i>=0;i--) {
+					double[] output = nn.feedForward(trainingData[i][0]);
+					int maxO = 0;
+					int maxRO = 0;
+					for (int j=output.length-1;j>=0;j--) {
+						maxO = output[j] > output[maxO] ? j : maxO;
+						maxRO = trainingData[i][1][j] > trainingData[i][1][maxRO] ? j : maxRO;
+					}
+					tdAcc += maxO == maxRO ? 1 : 0;
+				}
+				graph.extendGraph(graphTrainingAccuracy, 0, 100*tdAcc/trainingData.length);
+				double edAcc = 0;
+				for (int i=testData.length-1;i>=0;i--) {
+					double[] output = nn.feedForward(testData[i][0]);
+					int maxO = 0;
+					int maxRO = 0;
+					for (int j=output.length-1;j>=0;j--) {
+						maxO = output[j] > output[maxO] ? j : maxO;
+						maxRO = testData[i][1][j] > testData[i][1][maxRO] ? j : maxRO;
+					}
+					edAcc += maxO == maxRO ? 1 : 0;
+				}
+				graph.extendGraph(graphEvaluationAccuracy, 0, 100*edAcc/testData.length);
 				nn.monitor.addObserver(new Observer() {
 					private int iteration = 0;
 					@Override
@@ -76,7 +96,7 @@ public class HandwritingRecognition extends Application {
 						}
 					}
 				});
-				nn.stochasticGradientDescent(trainingData, trainingEpochs, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
+				nn.stochasticGradientDescent(trainingData, TRAINING_EPOCHS, 10, 0.1, 5.0, nn.new CrossEntropy(), testData);
 			}
 		};
 		nnThread.setPriority(Thread.MAX_PRIORITY);
@@ -93,14 +113,14 @@ public class HandwritingRecognition extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		Canvas canvas = new Canvas(canvasSize*canvasScale, canvasSize*canvasScale);
+		Canvas canvas = new Canvas(CANVAS_SIZE*CANVAS_SCALE, CANVAS_SIZE*CANVAS_SCALE);
 		canvas.setManaged(false);
-		canvas.relocate(canvasX+canvasBorderWidth, canvasY+canvasBorderWidth);
+		canvas.relocate(CANVAS_X+CANVAS_BORDER_WIDTH, CANVAS_Y+CANVAS_BORDER_WIDTH);
 
 		GraphicsContext gc;
 		gc = canvas.getGraphicsContext2D();
 		gc.setStroke(Color.BLACK);
-		gc.setLineWidth(lineWidth);
+		gc.setLineWidth(LINE_WIDTH);
 		gc.setLineCap(StrokeLineCap.ROUND);
 		gc.setLineJoin(StrokeLineJoin.ROUND);
 
@@ -109,25 +129,25 @@ public class HandwritingRecognition extends Application {
 		pane.setVgap(10);
 
 		Scene scene = new Scene(pane,
-				3*canvasX+canvasScale*canvasSize+lineGraphWidth+graph.getMarkingSizeX(),
-				lineGraphHeight+2*canvasY+graph.getMarkingSizeY());
+				3*CANVAS_X+CANVAS_SCALE*CANVAS_SIZE+LINEGRAPH_WIDTH+graph.getMarkingSizeX(),
+				LINEGRAPH_HEIGHT+2*CANVAS_Y+graph.getMarkingSizeY());
 		scene.setOnMousePressed(e -> {
 			gc.beginPath();
-			gc.lineTo(e.getSceneX()-canvasX-canvasBorderWidth, e.getSceneY()-canvasY-canvasBorderWidth);
+			gc.lineTo(e.getSceneX()-CANVAS_X-CANVAS_BORDER_WIDTH, e.getSceneY()-CANVAS_Y-CANVAS_BORDER_WIDTH);
 			gc.stroke();
 		});
 		scene.setOnMouseDragged(e -> {
-			gc.lineTo(e.getSceneX()-canvasX-canvasBorderWidth, e.getSceneY()-canvasY-canvasBorderWidth);
+			gc.lineTo(e.getSceneX()-CANVAS_X-CANVAS_BORDER_WIDTH, e.getSceneY()-CANVAS_Y-CANVAS_BORDER_WIDTH);
 			gc.stroke();
 		});
 
-		Rectangle canvasOuter = new Rectangle(canvasX, canvasY,
-				canvasSize*canvasScale+2*canvasBorderWidth, canvasSize*canvasScale+2*canvasBorderWidth);
+		Rectangle canvasOuter = new Rectangle(CANVAS_X, CANVAS_Y,
+				CANVAS_SIZE*CANVAS_SCALE+2*CANVAS_BORDER_WIDTH, CANVAS_SIZE*CANVAS_SCALE+2*CANVAS_BORDER_WIDTH);
 		canvasOuter.setManaged(false);
 		canvasOuter.setFill(Color.BROWN);
 
-		Rectangle canvasInner = new Rectangle(canvasX+canvasBorderWidth,
-				canvasY+canvasBorderWidth, canvasSize*canvasScale, canvasSize*canvasScale);
+		Rectangle canvasInner = new Rectangle(CANVAS_X+CANVAS_BORDER_WIDTH,
+				CANVAS_Y+CANVAS_BORDER_WIDTH, CANVAS_SIZE*CANVAS_SCALE, CANVAS_SIZE*CANVAS_SCALE);
 		canvasInner.setManaged(false);
 		canvasInner.setFill(Color.WHITE);
 
@@ -138,10 +158,10 @@ public class HandwritingRecognition extends Application {
 		Button buttonReset = new Button("Reset");
 		buttonReset.setCancelButton(true);
 		buttonReset.setOnAction(e -> {
-			gc.clearRect(0, 0, canvasSize*canvasScale, canvasSize*canvasScale);
+			gc.clearRect(0, 0, CANVAS_SIZE*CANVAS_SCALE, CANVAS_SIZE*CANVAS_SCALE);
 		});
 
-		WritableImage wim = new WritableImage(canvasSize*canvasScale, canvasSize*canvasScale);
+		WritableImage wim = new WritableImage(CANVAS_SIZE*CANVAS_SCALE, CANVAS_SIZE*CANVAS_SCALE);
 
 		Button buttonSubmit = new Button("Submit");
 		buttonSubmit.setOnAction(e -> {
@@ -150,49 +170,72 @@ public class HandwritingRecognition extends Application {
 			byte[] buffer = new byte[(int)wim.getWidth() * (int)wim.getHeight() * 4];
 			px.getPixels(0, 0, (int)wim.getWidth(), (int)wim.getHeight(),
 					PixelFormat.getByteBgraInstance(),buffer, 0, (int)wim.getWidth()*4);
-			double[][] inputImage = new double[canvasSize][];
+			double[][] inputImage = new double[CANVAS_SIZE][];
 			for (int i=inputImage.length-1;i>=0;i--) {
-				inputImage[i] = new double[canvasSize];
+				inputImage[i] = new double[CANVAS_SIZE];
 				for (int j=inputImage[i].length-1;j>=0;j--) {
 					inputImage[i][j] = 0;
-					for (int k=canvasScale-1;k>=0;k--) {
-						for (int l=canvasScale-1;l>=0;l--) {
+					for (int k=CANVAS_SCALE-1;k>=0;k--) {
+						for (int l=CANVAS_SCALE-1;l>=0;l--) {
 							for (int m=2;m>=0;m--) {
-								inputImage[i][j] += buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)
-										+k*canvasSize*canvasScale+l)+m]<0 ? (
-										buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)
-												+k*canvasSize*canvasScale+l)+m]>=-1 ?
-												buffer[4*(canvasScale*(i*canvasSize*canvasScale+j)
-														+k*canvasSize*canvasScale+l)+m] : -1) : 0;
+								inputImage[i][j] += buffer[4*(CANVAS_SCALE*(i*CANVAS_SIZE*CANVAS_SCALE+j)
+										+k*CANVAS_SIZE*CANVAS_SCALE+l)+m]<0 ? (
+										buffer[4*(CANVAS_SCALE*(i*CANVAS_SIZE*CANVAS_SCALE+j)
+												+k*CANVAS_SIZE*CANVAS_SCALE+l)+m]>=-1 ?
+												buffer[4*(CANVAS_SCALE*(i*CANVAS_SIZE*CANVAS_SCALE+j)
+														+k*CANVAS_SIZE*CANVAS_SCALE+l)+m] : -1) : 0;
 							}
 						}
 					}
-					inputImage[i][j] = 1+inputImage[i][j] / (3*Math.pow(canvasScale, 2));
+					inputImage[i][j] = 1+inputImage[i][j] / (3*Math.pow(CANVAS_SCALE, 2));
 				}
 			}
 			System.out.println();
+			ArrayDebug.setDoubleFormat(" 5.0");
 			ArrayDebug.printArray(new double[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
-			ArrayDebug.printArray(nn.feedForward(VecMath.merge(inputImage))); // The inputImage array has to be merged if a fcnn is used
+			// The inputImage array has to be merged if a fcnn is used
+			ArrayDebug.setDoubleFormat(" 1.2");
+			ArrayDebug.printArray(nn.feedForward(VecMath.merge(inputImage)));
 		});
 
-		Slider yScaleSlider = new Slider(0, 95, 0);
-		yScaleSlider.setBlockIncrement(1);
-		yScaleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
-			graph.setYStart((double)newValue);
+		graph.setMarking(LineGraph.marking(TRAINING_EPOCHS+1, 6, 2, 0, 3, 0, 6,
+				Font.font("verdana", FontWeight.LIGHT, FontPosture.REGULAR, 10)));
+		graph.setX(graph.getX() + graph.getMarkingSizeX());
+		graph.setScaleStrokeWidth(2);
+
+		graph.setOnScroll(e -> {
+			this.zoomGraph(e.getDeltaY() > 0 ? -1 : 1,
+					(e.getSceneY()-(graph.getY()+graph.getHeight()))/graph.getHeight());
 		});
 
-		scene.setOnScroll(event -> {
-			graph.setYStart(Math.min(98, Math.max(0, graph.getYStart() + (event.getDeltaY() > 0 ? 1 : -1))));
-			yScaleSlider.setValue(graph.getYStart());
+		graph.setOnMousePressed(e -> {
+			this.dragStartY = e.getSceneY();
+		});
+
+		graph.setOnMouseDragged(e -> {
+			double distance = Math.min(Math.max(
+					(e.getSceneY()-this.dragStartY)/(graph.getHeight()/(graph.getYEnd()-graph.getYStart())),
+					graph.getYEnd()-100), graph.getYStart());
+			graph.setYStart(graph.getYStart() - distance);
+			graph.setYEnd(graph.getYEnd() - distance);
+			this.dragStartY = e.getSceneY();
 		});
 
 		pane.add(buttonReset, 4, 23);
-		pane.add(buttonSubmit, 4, 24);
-		pane.add(yScaleSlider, 4, 35);
-		pane.getChildren().addAll(canvasGroup, graph.getCompleteGroup());
+		pane.add(buttonSubmit, 10, 23);
+		pane.getChildren().addAll(canvasGroup, graph);
 
 		primaryStage.setTitle("Handwriting Recognition");
 		primaryStage.setScene(scene);
 		primaryStage.show();
+	}
+
+	private void zoomGraph(double amount, double to) {
+		to = Math.max(Math.min(-to, 1), 0);
+		amount = graph.getYEnd()-graph.getYStart()+amount < 1 ? 1-graph.getYEnd()+graph.getYStart() : amount;
+		double overZoom = (graph.getYStart() - amount * (1 - to) < 0 ? graph.getYStart() - amount * (1 - to)
+				: (graph.getYEnd() + amount * to > 100 ? -(100 - graph.getYEnd() + amount * to) : 0));
+		graph.setYScale(graph.getYStart() - amount*(1-to)+overZoom, graph.getYEnd() + amount*to-overZoom);
+		graph.setYScale(Math.max(graph.getYStart(), 0), Math.min(graph.getYEnd(), 100));
 	}
 }
