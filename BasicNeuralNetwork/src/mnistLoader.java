@@ -11,9 +11,9 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 /***
  * class to load mnist data from specific files
@@ -21,7 +21,7 @@ import java.util.zip.ZipFile;
  * @author Mario Schaeper
  */
 public class mnistLoader {
-	private static String path = "mnistData\\";
+	private static String path = "mnistData/";
 
 	/**
 	 * Loads training data from <b>trainingData.txt</b> and
@@ -31,9 +31,9 @@ public class mnistLoader {
 	 *         training data
 	 */
 	public static double[][][] loadTrainingDataTxt() {
-		double[][] trainingInputs = loadInputsTxt("TestData.txt");
-		double[][] trainingOutputs = loadResultsTxtWrapper("TestDataResults.txt");
-		double[][][] trainingData = new double[trainingOutputs.length][][];
+		final double[][] trainingInputs = mnistLoader.loadInputsTxt("TestData.txt");
+		final double[][] trainingOutputs = mnistLoader.loadResultsTxtWrapper("TestDataResults.txt");
+		final double[][][] trainingData = new double[trainingOutputs.length][][];
 		for (int i = 0; i < trainingData.length; i++) {
 			trainingData[i] = new double[2][];
 			trainingData[i][0] = trainingInputs[i];
@@ -50,9 +50,9 @@ public class mnistLoader {
 	 *            the file to load from
 	 * @return formatted array of the loaded outputs
 	 */
-	public static double[][] loadResultsTxtWrapper(String fileName) {
-		double[] trainingResults = loadResultsTxt(fileName);
-		double[][] trainingOutputs = new double[trainingResults.length][];
+	public static double[][] loadResultsTxtWrapper(final String fileName) {
+		final double[] trainingResults = mnistLoader.loadResultsTxt(fileName);
+		final double[][] trainingOutputs = new double[trainingResults.length][];
 		double[] temp;
 		for (int i = 0; i < trainingOutputs.length; i++) {
 			temp = new double[10];
@@ -71,27 +71,27 @@ public class mnistLoader {
 	 *            the file to load from
 	 * @return array of the loaded outputs
 	 */
-	public static double[][] loadInputsTxt(String fileName) {
-		double startTime = System.nanoTime();
+	public static double[][] loadInputsTxt(final String fileName) {
+		final double startTime = System.nanoTime();
 		double[][] ret = new double[0][];
 		try {
-			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
-			FileChannel channel = stream.getChannel();
-			ArrayList<Double> whatever = new ArrayList<Double>();
-			int fileLength = (int)stream.length();
+			final RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
+			final FileChannel channel = stream.getChannel();
+			ArrayList<Double> whatever = new ArrayList<>();
+			final int fileLength = (int)stream.length();
 			int count = 0;
 			double currentNumber = 0;
 			int currentDigits = 0;
 			char lastChar = ' ';
 			boolean dot = false;
 			for (int i = 0; i < fileLength; i++) {
-				char toAdd = (char)stream.readByte();
+				final char toAdd = (char)stream.readByte();
 				switch (toAdd) {
 				case '[':
-					whatever = new ArrayList<Double>();
+					whatever = new ArrayList<>();
 					break;
 				case ']':
-					double[][] tempRet = new double[ret.length + 1][];
+					final double[][] tempRet = new double[ret.length + 1][];
 					System.arraycopy(ret, 0, tempRet, 0, ret.length);
 					ret = tempRet;
 					ret[count] = new double[whatever.size()];
@@ -105,7 +105,7 @@ public class mnistLoader {
 				case 13:
 				case 10:
 				case ' ':
-					if (lastChar == '.' || (lastChar >= '0' && lastChar <= '9')) {
+					if (lastChar == '.' || lastChar >= '0' && lastChar <= '9') {
 						whatever.add(currentNumber);
 						currentNumber = 0;
 						dot = false;
@@ -121,7 +121,7 @@ public class mnistLoader {
 				default:
 					if (toAdd >= '0' && toAdd <= '9') {
 						if (dot) {
-							int mult = (int)Math.pow(10, ++currentDigits);
+							final int mult = (int)Math.pow(10, ++currentDigits);
 							currentNumber = (currentNumber * mult + Integer.parseInt("" + toAdd)) / mult;
 						} else {
 							currentNumber = currentNumber * 10 + Integer.parseInt("" + toAdd);
@@ -141,7 +141,7 @@ public class mnistLoader {
 							(System.nanoTime() - startTime) / 1000000000));
 			stream.close();
 			channel.close();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.out.println("load inputs failed");
 			e.printStackTrace();
 		}
@@ -155,15 +155,15 @@ public class mnistLoader {
 	 *            the file to load from
 	 * @return array fo the loaded outputs
 	 */
-	public static double[] loadResultsTxt(String fileName) {
-		double startTime = System.nanoTime();
+	public static double[] loadResultsTxt(final String fileName) {
+		final double startTime = System.nanoTime();
 		double[] ret = null;
 		try {
-			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
-			FileChannel channel = stream.getChannel();
+			final RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
+			final FileChannel channel = stream.getChannel();
 			ret = new double[(int)stream.length()];
 			for (int i = 0; i < ret.length; i++) {
-				char toAdd = (char)stream.readByte();
+				final char toAdd = (char)stream.readByte();
 				ret[i] = Integer.parseInt("" + toAdd);
 				if (i % 250 == 0) {
 					System.out.println(String.format("loaded results: %5d", i));
@@ -175,7 +175,7 @@ public class mnistLoader {
 					String.format(
 							"loading results complete in %4.8f seconds",
 							(System.nanoTime() - startTime) / 1000000000));
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.out.println("loading results failed");
 			e.printStackTrace();
 		}
@@ -192,15 +192,15 @@ public class mnistLoader {
 	 * @param overwrite
 	 *            whether the file should be overwritten, if it exists or not
 	 */
-	public static void saveData(double[][][] data, String fileName, boolean overwrite) {
-		double startTime = System.nanoTime();
+	public static void saveData(final double[][][] data, final String fileName, final boolean overwrite) {
+		final double startTime = System.nanoTime();
 		try {
-			RandomAccessFile stream = new RandomAccessFile(path + fileName, "rw");
-			FileChannel channel = stream.getChannel();
+			final RandomAccessFile stream = new RandomAccessFile(path + fileName, "rw");
+			final FileChannel channel = stream.getChannel();
 			FileLock lock = null;
 			try {
 				lock = channel.tryLock();
-			} catch (OverlappingFileLockException e) {
+			} catch (final OverlappingFileLockException e) {
 				stream.close();
 				channel.close();
 				throw new IOException(e);
@@ -233,7 +233,7 @@ public class mnistLoader {
 					String.format(
 							"saving data complete in %4.8f seconds",
 							(System.nanoTime() - startTime) / 1000000000));
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.out.println("data saving failed");
 			e.printStackTrace();
 		}
@@ -246,12 +246,12 @@ public class mnistLoader {
 	 *            the name of the file to load from
 	 * @return a array of the loaded data
 	 */
-	public static double[][][] loadData(String fileName) {
-		double startTime = System.nanoTime();
+	public static double[][][] loadData(final String fileName) {
+		final double startTime = System.nanoTime();
 		double[][][] ret = null;
 		try {
-			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
-			FileChannel channel = stream.getChannel();
+			final RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
+			final FileChannel channel = stream.getChannel();
 			ret = new double[stream.readInt()][][];
 			for (int i = ret.length - 1; i >= 0; i--) {
 				ret[i] = new double[stream.readInt()][];
@@ -271,7 +271,7 @@ public class mnistLoader {
 					String.format(
 							"loading data complete in %4.8f seconds",
 							(System.nanoTime() - startTime) / 1000000000));
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.out.println("loading data failed");
 			e.printStackTrace();
 		}
@@ -285,12 +285,12 @@ public class mnistLoader {
 	 *            the name of the file to load from
 	 * @return a array of the loaded data
 	 */
-	public static double[][][] loadDataAlternative(String fileName) {
-		double startTime = System.nanoTime();
+	public static double[][][] loadDataAlternative(final String fileName) {
+		final double startTime = System.nanoTime();
 		double[][][] ret = null;
 		try {
-			RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
-			FileChannel channel = stream.getChannel();
+			final RandomAccessFile stream = new RandomAccessFile(path + fileName, "r");
+			final FileChannel channel = stream.getChannel();
 			ret = new double[stream.readInt()][][];
 			for (int i = ret.length - 1; i >= 0; i--) {
 				ret[i] = new double[stream.readInt()][];
@@ -315,7 +315,7 @@ public class mnistLoader {
 							"loading data complete in %4.8f seconds",
 							(System.nanoTime() - startTime) / 1000000000));
 
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.out.println("loading data failed");
 			e.printStackTrace();
 		}
@@ -328,11 +328,11 @@ public class mnistLoader {
 	 * @param fileName
 	 *            the file name
 	 */
-	public static void saveArray(double[][][] a, String fileName) {
+	public static void saveArray(final double[][][] a, final String fileName) {
 		try {
-			double startTime = System.nanoTime();
-			FileOutputStream f = new FileOutputStream(path + fileName);
-			ObjectOutput s = new ObjectOutputStream(f);
+			final double startTime = System.nanoTime();
+			final FileOutputStream f = new FileOutputStream(path + fileName);
+			final ObjectOutput s = new ObjectOutputStream(f);
 			s.writeObject(a);
 			s.close();
 			f.close();
@@ -340,7 +340,7 @@ public class mnistLoader {
 					String.format(
 							"saving array finished in %4.8f seconds",
 							(System.nanoTime() - startTime) / 1000000000));
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.out.println("array saving failed");
 			e.printStackTrace();
 		}
@@ -353,12 +353,12 @@ public class mnistLoader {
 	 *            the file name
 	 * @return the loaded array
 	 */
-	public static double[][][] loadArray(String fileName) {
+	public static double[][][] loadArray(final String fileName) {
 		double[][][] ret = null;
 		try {
-			double startTime = System.nanoTime();
-			FileInputStream f = new FileInputStream(path + fileName);
-			ObjectInputStream s = new ObjectInputStream(f);
+			final double startTime = System.nanoTime();
+			final FileInputStream f = new FileInputStream(path + fileName);
+			final ObjectInputStream s = new ObjectInputStream(f);
 			ret = (double[][][])s.readObject();
 			s.close();
 			f.close();
@@ -379,16 +379,16 @@ public class mnistLoader {
 	 * @param zipName
 	 *            the .zip-file name
 	 */
-	public static void unzip(String zipName) {
-		double startTime = System.nanoTime();
-		byte[] buffer = new byte[1024];
+	public static void unzip(final String zipName) {
+		final double startTime = System.nanoTime();
+		final byte[] buffer = new byte[1024];
 		try {
-			ZipInputStream s = new ZipInputStream(new FileInputStream(path + zipName));
+			final ZipInputStream s = new ZipInputStream(new FileInputStream(path + zipName));
 			ZipEntry ze = s.getNextEntry();
 			while (ze != null) {
-				File newFile = new File(path + ze.getName());
+				final File newFile = new File(path + ze.getName());
 				if (!newFile.exists()) {
-					FileOutputStream fs = new FileOutputStream(newFile);
+					final FileOutputStream fs = new FileOutputStream(newFile);
 					int len;
 					while ((len = s.read(buffer)) > 0) {
 						fs.write(buffer, 0, len);
@@ -402,7 +402,7 @@ public class mnistLoader {
 			s.close();
 			System.out.println(
 					String.format("unzipping finished in %4.8f seconds", (System.nanoTime() - startTime) / 1000000000));
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.out.println("unzipping failed");
 			e.printStackTrace();
 		}
@@ -416,17 +416,17 @@ public class mnistLoader {
 	 * @param fileName
 	 *            the name of the file to load from
 	 */
-	public static double[][][] loadArrayZip(String zipName, String fileName) {
+	public static double[][][] loadArrayZip(final String zipName, final String fileName) {
 		double[][][] ret = null;
-		double startTime = System.nanoTime();
+		final double startTime = System.nanoTime();
 		try {
-			ZipFile zipFile = new ZipFile(path + zipName);
-			ZipInputStream s = new ZipInputStream(new FileInputStream(path + zipName));
+			final ZipFile zipFile = new ZipFile(path + zipName);
+			final ZipInputStream s = new ZipInputStream(new FileInputStream(path + zipName));
 			ZipEntry ze = s.getNextEntry();
 			while (ze != null) {
 				if (ze.getName().equals(fileName)) {
-					InputStream f = zipFile.getInputStream(ze);
-					ObjectInputStream is = new ObjectInputStream(f);
+					final InputStream f = zipFile.getInputStream(ze);
+					final ObjectInputStream is = new ObjectInputStream(f);
 					ret = (double[][][])is.readObject();
 					is.close();
 					f.close();
