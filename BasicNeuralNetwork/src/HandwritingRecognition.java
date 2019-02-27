@@ -98,21 +98,21 @@ public class HandwritingRecognition extends Application {
 					public void update(Observable obj, Object arg) {
 						NeuralNet.Monitor.Change change =
 								(NeuralNet.Monitor.Change)arg;
-						final double value = change.getValue()
-								/ trainingData.length * 100;
 						try {
 							switch (change.getIndex()) {
 								case NeuralNet.Monitor.TRAINING_ACCURACY:
 									graph.extendGraph(
 											graphTrainingAccuracy,
 											1 + this.iteration / 2,
-											value);
+											change.getValue()
+												/ trainingData.length * 100);
 									break;
 								case NeuralNet.Monitor.EVALUATION_ACCURACY:
 									graph.extendGraph(
 											graphEvaluationAccuracy,
 											1 + this.iteration / 2,
-											value);
+											change.getValue()
+												/ testData.length * 100);
 									break;
 								default:
 									break;
